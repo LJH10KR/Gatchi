@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users 컬렉션: 본인 문서만 읽기/쓰기 가능
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // trips 및 하위 컬렉션(days, plans, checklists 등): ownerUid가 본인일 때만 접근 가능
+    match /trips/{tripId} {
+      // 기존 trip 문서에 대해서는 resource.data 기준으로 소유자 확인
+      allow read, update, delete: if request.auth != null
+                                  && resource.data.ownerUid == request.auth.uid;
+
+      // 새로 생성되는 trip 문서에 대해서는 request.resource 기준으로 소유자 확인
+      allow create: if request.auth != null
+                    && request.resource.data.ownerUid == request.auth.uid;
+
+      // 하위 컬렉션은 상위 trip 문서의 ownerUid를 기준으로 권한 확인
+      function isTripOwner() {
+        return request.auth != null
+               && request.auth.uid == get(/databases/$(database)/documents/trips/$(tripId)).data.ownerUid;
+      }
+
+      match /days/{dayId} {
+        allow read, write: if isTripOwner();
+      }
+
+      match /days/{dayId}/plans/{planId} {
+        allow read, write: if isTripOwner();
+      }
+
+      match /checklists/{itemId} {
+        allow read, write: if isTripOwner();
+      }
+    }
+  }
+}
