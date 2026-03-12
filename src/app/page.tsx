@@ -1,30 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
-  onAuthStateChangedListener,
   signInWithEmailPassword,
   signInWithGoogle,
   signOutUser,
   signUpWithEmailAndPassword,
 } from "@/firebase/auth";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Home() {
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoginMode, setIsLoginMode] = useState(true);
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChangedListener((user) => {
-      setCurrentUserEmail(user?.email ?? null);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,10 +74,12 @@ export default function Home() {
           </p>
         </header>
 
-        {currentUserEmail && (
+        {user && (
           <div className="mb-4 rounded-xl bg-zinc-50 p-3 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
             <p className="font-medium">현재 로그인 계정</p>
-            <p className="truncate text-xs text-zinc-500">{currentUserEmail}</p>
+            <p className="truncate text-xs text-zinc-500">
+              {user.email ?? "이메일 없음"}
+            </p>
           </div>
         )}
 
@@ -146,11 +140,11 @@ export default function Home() {
               : "이미 계정이 있다면? 로그인하기"}
           </button>
 
-          {currentUserEmail && (
+          {user && (
             <button
               type="button"
               onClick={handleSignOut}
-              disabled={loading}
+              disabled={loading || authLoading}
               className="text-xs font-medium text-zinc-700 underline underline-offset-2 dark:text-zinc-300"
             >
               로그아웃
