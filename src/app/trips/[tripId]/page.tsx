@@ -38,7 +38,7 @@ export default function TripDetailPage() {
   const [planStartTime, setPlanStartTime] = useState("");
   const [planEndTime, setPlanEndTime] = useState("");
   const [planMemo, setPlanMemo] = useState("");
-  const [planItemsText, setPlanItemsText] = useState("");
+  const [planItems, setPlanItems] = useState<string[]>([""]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,7 +94,7 @@ export default function TripDetailPage() {
     setPlanStartTime("");
     setPlanEndTime("");
     setPlanMemo("");
-    setPlanItemsText("");
+    setPlanItems([""]);
   };
 
   const handleSelectPlan = (plan: Plan) => {
@@ -103,7 +103,8 @@ export default function TripDetailPage() {
     setPlanStartTime(plan.startTime ?? "");
     setPlanEndTime(plan.endTime ?? "");
     setPlanMemo(plan.memo ?? "");
-    setPlanItemsText((plan.items ?? []).join(", "));
+    const items = plan.items ?? [];
+    setPlanItems(items.length > 0 ? items : [""]);
   };
 
   const handleSavePlan = async (e: React.FormEvent) => {
@@ -113,10 +114,9 @@ export default function TripDetailPage() {
     setSaving(true);
     setError(null);
 
-    const items =
-      planItemsText.trim().length === 0
-        ? []
-        : planItemsText.split(",").map((s) => s.trim()).filter(Boolean);
+    const items = planItems
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
 
     try {
       if (selectedPlanId) {
@@ -527,13 +527,48 @@ export default function TripDetailPage() {
                 <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
                   준비물 (쉼표로 구분)
                 </label>
-                <input
-                  type="text"
-                  value={planItemsText}
-                  onChange={(e) => setPlanItemsText(e.target.value)}
-                  placeholder="여권, 카메라, 선크림"
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                />
+                <div className="space-y-2">
+                  {planItems.map((value, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2"
+                    >
+                      <input
+                        type="text"
+                        value={value}
+                        onChange={(e) => {
+                          const next = [...planItems];
+                          next[index] = e.target.value;
+                          setPlanItems(next);
+                        }}
+                        placeholder="예: 여권"
+                        className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                      {index === 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setPlanItems((prev) => [...prev, ""])}
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-bold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                        >
+                          +
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPlanItems((prev) => {
+                              const next = prev.filter((_, i) => i !== index);
+                              return next.length > 0 ? next : [""];
+                            })
+                          }
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 text-xs font-bold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                        >
+                          -
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="flex items-center justify-between gap-2">

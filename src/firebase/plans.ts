@@ -86,7 +86,28 @@ export async function updatePlan(
   data: Partial<Omit<Plan, "id" | "tripId" | "dayId">>,
 ) {
   const ref = doc(db, "trips", tripId, "days", dayId, "plans", planId);
-  await updateDoc(ref, data as any);
+  const clean: any = {};
+
+  if (data.title !== undefined) {
+    clean.title = data.title;
+  }
+  if (data.startTime !== undefined) {
+    clean.startTime = data.startTime ?? null;
+  }
+  if (data.endTime !== undefined) {
+    clean.endTime = data.endTime ?? null;
+  }
+  if (data.memo !== undefined) {
+    clean.memo = data.memo ?? "";
+  }
+  if (data.items !== undefined) {
+    clean.items = data.items ?? [];
+  }
+  if (data.order !== undefined) {
+    clean.order = data.order;
+  }
+
+  await updateDoc(ref, clean);
 }
 
 export async function deletePlan(tripId: string, dayId: string, planId: string) {
