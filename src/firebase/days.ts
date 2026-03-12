@@ -28,7 +28,9 @@ export function listenTripDays(
 
   return onSnapshot(q, (snapshot) => {
     const days: TripDay[] = snapshot.docs.map((docSnap, index) => {
-      const data = docSnap.data() as any;
+      const data = docSnap.data() as {
+        date?: string;
+      };
       return {
         id: docSnap.id,
         tripId,

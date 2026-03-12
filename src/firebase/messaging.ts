@@ -59,7 +59,7 @@ export async function saveFcmToken(token: string) {
 }
 
 export function subscribeToForegroundMessages(
-  handler: (payload: any) => void,
+  handler: (payload: import("firebase/messaging").MessagePayload) => void,
 ) {
   messagingPromise.then((messaging) => {
     if (!messaging) return;

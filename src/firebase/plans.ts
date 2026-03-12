@@ -35,7 +35,14 @@ export function listenPlansForDay(
   return onSnapshot(q, (snapshot) => {
     const plans: Plan[] = snapshot.docs
       .map((docSnap, index) => {
-        const data = docSnap.data() as any;
+        const data = docSnap.data() as {
+          title?: string;
+          startTime?: string;
+          endTime?: string;
+          memo?: string;
+          items?: string[];
+          order?: number;
+        };
         return {
           id: docSnap.id,
           tripId,
@@ -86,7 +93,7 @@ export async function updatePlan(
   data: Partial<Omit<Plan, "id" | "tripId" | "dayId">>,
 ) {
   const ref = doc(db, "trips", tripId, "days", dayId, "plans", planId);
-  const clean: any = {};
+  const clean: Partial<Omit<Plan, "id" | "tripId" | "dayId">> = {};
 
   if (data.title !== undefined) {
     clean.title = data.title;

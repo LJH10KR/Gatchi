@@ -26,7 +26,6 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [newTitle, setNewTitle] = useState("");
-  const [newCountry, setNewCountry] = useState("Spain");
   const [newStartDate, setNewStartDate] = useState("");
   const [newEndDate, setNewEndDate] = useState("");
 
@@ -51,8 +50,12 @@ export default function Home() {
       }
       setEmail("");
       setPassword("");
-    } catch (err: any) {
-      setError(err?.message ?? "로그인 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("로그인 중 오류가 발생했어요.");
+      }
     } finally {
       setLoading(false);
     }
@@ -63,8 +66,12 @@ export default function Home() {
     setError(null);
     try {
       await signInWithGoogle();
-    } catch (err: any) {
-      setError(err?.message ?? "Google 로그인 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Google 로그인 중 오류가 발생했어요.");
+      }
     } finally {
       setLoading(false);
     }
@@ -75,8 +82,12 @@ export default function Home() {
     setError(null);
     try {
       await signOutUser();
-    } catch (err: any) {
-      setError(err?.message ?? "로그아웃 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("로그아웃 중 오류가 발생했어요.");
+      }
     } finally {
       setLoading(false);
     }
@@ -91,15 +102,19 @@ export default function Home() {
       await createTrip({
         ownerUid: user.uid,
         title: newTitle,
-        country: newCountry,
+        country: "Spain",
         startDate: newStartDate,
         endDate: newEndDate,
       });
       setNewTitle("");
       setNewStartDate("");
       setNewEndDate("");
-    } catch (err: any) {
-      setError(err?.message ?? "여행 생성 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("여행 생성 중 오류가 발생했어요.");
+      }
     } finally {
       setLoading(false);
     }
@@ -110,8 +125,12 @@ export default function Home() {
     setError(null);
     try {
       await deleteTrip(id);
-    } catch (err: any) {
-      setError(err?.message ?? "여행 삭제 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("여행 삭제 중 오류가 발생했어요.");
+      }
     }
   };
 
