@@ -65,7 +65,15 @@ export default function TripDetailPage() {
       const ref = doc(db, "trips", tripId);
       const snap = await getDoc(ref);
       if (snap.exists()) {
-        const data = snap.data() as any;
+        const data = snap.data() as {
+          title?: string;
+          country?: string;
+          startDate?: string;
+          endDate?: string;
+          ownerUid: string;
+          members?: string[];
+          createdAt?: { toDate?: () => Date };
+        };
         const tripData: Trip = {
           id: snap.id,
           title: data.title ?? "",
@@ -91,7 +99,7 @@ export default function TripDetailPage() {
       }
     }
     fetchTrip();
-  }, [tripId]);
+  }, [tripId, requestTargetUid]);
 
   useEffect(() => {
     const unsubscribe = listenTripDays(tripId, (d) => {
@@ -163,8 +171,12 @@ export default function TripDetailPage() {
         });
       }
       resetPlanForm();
-    } catch (err: any) {
-      setError(err?.message ?? "일정을 저장하는 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("일정을 저장하는 중 오류가 발생했어요.");
+      }
     } finally {
       setSaving(false);
     }
@@ -178,8 +190,12 @@ export default function TripDetailPage() {
     try {
       await deletePlan(trip.id, selectedDayId, selectedPlanId);
       resetPlanForm();
-    } catch (err: any) {
-      setError(err?.message ?? "일정을 삭제하는 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("일정을 삭제하는 중 오류가 발생했어요.");
+      }
     } finally {
       setSaving(false);
     }
@@ -202,8 +218,12 @@ export default function TripDetailPage() {
         date: newDayDate,
       });
       setNewDayDate("");
-    } catch (err: any) {
-      setError(err?.message ?? "날짜를 추가하는 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("날짜를 추가하는 중 오류가 발생했어요.");
+      }
     } finally {
       setSaving(false);
     }
@@ -222,8 +242,12 @@ export default function TripDetailPage() {
       });
       setSelectedDayId(null);
       resetPlanForm();
-    } catch (err: any) {
-      setError(err?.message ?? "날짜를 삭제하는 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("날짜를 삭제하는 중 오류가 발생했어요.");
+      }
     } finally {
       setSaving(false);
     }
@@ -258,8 +282,12 @@ export default function TripDetailPage() {
         setRequestTargetUid(user.uid);
       }
       setMemberEmail("");
-    } catch (err: any) {
-      setError(err?.message ?? "동행자를 추가하는 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("동행자를 추가하는 중 오류가 발생했어요.");
+      }
     } finally {
       setMemberLoading(false);
     }
@@ -278,8 +306,12 @@ export default function TripDetailPage() {
         message: requestMessage.trim(),
       });
       setRequestMessage("");
-    } catch (err: any) {
-      setError(err?.message ?? "요청을 보내는 중 오류가 발생했어요.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("요청을 보내는 중 오류가 발생했어요.");
+      }
     } finally {
       setSaving(false);
     }

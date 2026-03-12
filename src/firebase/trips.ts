@@ -32,7 +32,15 @@ export function listenAllTrips(callback: (trips: Trip[]) => void): Unsubscribe {
 
   return onSnapshot(q, (snapshot) => {
     const trips: Trip[] = snapshot.docs.map((docSnap) => {
-      const data = docSnap.data() as any;
+      const data = docSnap.data() as {
+        title?: string;
+        country?: string;
+        startDate?: string;
+        endDate?: string;
+        ownerUid: string;
+        members?: string[];
+        createdAt?: { toDate?: () => Date };
+      };
       return {
         id: docSnap.id,
         title: data.title ?? "",
@@ -61,7 +69,15 @@ export function listenUserTrips(
 
   return onSnapshot(q, (snapshot) => {
     const trips: Trip[] = snapshot.docs.map((docSnap) => {
-      const data = docSnap.data() as any;
+      const data = docSnap.data() as {
+        title?: string;
+        country?: string;
+        startDate?: string;
+        endDate?: string;
+        ownerUid: string;
+        members?: string[];
+        createdAt?: { toDate?: () => Date };
+      };
       return {
         id: docSnap.id,
         title: data.title ?? "",

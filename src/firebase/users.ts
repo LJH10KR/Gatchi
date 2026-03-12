@@ -23,7 +23,10 @@ export async function findUserByEmail(
   const snap = await getDocs(q);
   if (snap.empty) return null;
   const docSnap = snap.docs[0];
-  const data = docSnap.data() as any;
+  const data = docSnap.data() as {
+    email?: string;
+    displayName?: string;
+  };
   return {
     uid: docSnap.id,
     email: data.email ?? null,
@@ -40,7 +43,10 @@ export async function getUsersByUids(
       const ref = doc(db, "users", uid);
       const snap = await getDoc(ref);
       if (!snap.exists()) return;
-      const data = snap.data() as any;
+      const data = snap.data() as {
+        email?: string;
+        displayName?: string;
+      };
       results.push({
         uid,
         email: data.email ?? null,
