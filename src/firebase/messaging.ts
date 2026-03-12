@@ -30,10 +30,8 @@ export async function getFcmToken(): Promise<string | null> {
   }
 
   try {
-    const registration = await navigator.serviceWorker.ready;
     const token = await getToken(messaging as Messaging, {
       vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: registration,
     });
     return token ?? null;
   } catch (err) {
