@@ -7,11 +7,16 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // trips 및 하위 컬렉션(days, plans, checklists 등): ownerUid가 본인일 때만 접근 가능
+    // trips 및 하위 컬렉션(days, plans, checklists 등)
+    // - read: 모든 사용자가 가능 (공개 읽기)
+    // - write: ownerUid가 본인인 경우에만 가능
     match /trips/{tripId} {
+      // 읽기: 누구나 가능
+      allow read: if true;
+
       // 기존 trip 문서에 대해서는 resource.data 기준으로 소유자 확인
-      allow read, update, delete: if request.auth != null
-                                  && resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.ownerUid == request.auth.uid;
 
       // 새로 생성되는 trip 문서에 대해서는 request.resource 기준으로 소유자 확인
       allow create: if request.auth != null
@@ -24,15 +29,20 @@ service cloud.firestore {
       }
 
       match /days/{dayId} {
-        allow read, write: if isTripOwner();
+        // 읽기: 누구나 가능
+        allow read: if true;
+        // 쓰기: 소유자만
+        allow write: if isTripOwner();
       }
 
       match /days/{dayId}/plans/{planId} {
-        allow read, write: if isTripOwner();
+        allow read: if true;
+        allow write: if isTripOwner();
       }
 
       match /checklists/{itemId} {
-        allow read, write: if isTripOwner();
+        allow read: if true;
+        allow write: if isTripOwner();
       }
     }
   }

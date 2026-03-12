@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import {
   signInWithEmailPassword,
@@ -12,7 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   createTrip,
   deleteTrip,
-  listenUserTrips,
+  listenAllTrips,
   type Trip,
 } from "@/firebase/trips";
 
@@ -30,17 +31,12 @@ export default function Home() {
   const [newEndDate, setNewEndDate] = useState("");
 
   useEffect(() => {
-    if (!user) {
-      setTrips([]);
-      return;
-    }
-
-    const unsubscribe = listenUserTrips(user.uid, (data) => {
+    const unsubscribe = listenAllTrips((data) => {
       setTrips(data);
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,13 +216,24 @@ export default function Home() {
           </button>
         </div>
 
-        {user && (
-          <section className="mt-8 border-t border-zinc-200 pt-5 dark:border-zinc-700">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+        <section className="mt-8 border-t border-zinc-200 pt-5 dark:border-zinc-700">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
               나의 여행들
             </h2>
+            {user ? (
+              <span className="text-[11px] text-zinc-500">
+                내 여행은 ✨ 표시가 붙어요
+              </span>
+            ) : (
+              <span className="text-[11px] text-zinc-500">
+                로그인 없이도 다른 사람의 여행을 구경할 수 있어요
+              </span>
+            )}
+          </div>
 
-            <form onSubmit={handleCreateTrip} className="space-y-3">
+          {user && (
+            <form onSubmit={handleCreateTrip} className="space-y-3 mb-4">
               <input
                 type="text"
                 placeholder="여행 이름 (예: 스페인 봄 여행)"
@@ -256,39 +263,66 @@ export default function Home() {
                 새 여행 추가
               </button>
             </form>
+          )}
 
-            <div className="mt-4 space-y-2">
-              {authLoading ? (
-                <p className="text-xs text-zinc-500">여행을 불러오는 중...</p>
-              ) : trips.length === 0 ? (
-                <p className="text-xs text-zinc-500">
-                  아직 등록된 여행이 없어요. 위에서 첫 여행을 추가해 보세요.
-                </p>
-              ) : (
-                trips.map((trip) => (
-                  <div
-                    key={trip.id}
-                    className="flex items-center justify-between rounded-xl bg-zinc-50 px-3 py-2 text-xs text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{trip.title}</span>
-                      <span className="text-[11px] text-zinc-500">
-                        {trip.startDate} ~ {trip.endDate}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteTrip(trip.id)}
-                      className="text-[11px] text-zinc-500 underline underline-offset-2 hover:text-zinc-800 dark:hover:text-zinc-200"
+          <div className="mt-2">
+            {authLoading ? (
+              <p className="text-xs text-zinc-500">여행을 불러오는 중...</p>
+            ) : trips.length === 0 ? (
+              <p className="text-xs text-zinc-500">
+                아직 등록된 여행이 없어요. 로그인 후 첫 여행을 추가해 보세요.
+              </p>
+            ) : (
+              <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth snap-x snap-mandatory">
+                {trips.map((trip) => {
+                  const isOwner = user && trip.ownerUid === user.uid;
+                  return (
+                    <div
+                      key={trip.id}
+                      className="snap-start"
                     >
-                      삭제
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-        )}
+                      <Link
+                        href={`/trips/${trip.id}`}
+                        className="flex h-32 min-w-[220px] flex-col justify-between rounded-2xl bg-zinc-50 px-4 py-3 text-xs text-zinc-800 shadow-sm transition hover:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="line-clamp-2 text-sm font-semibold">
+                              {trip.title}
+                            </span>
+                            {isOwner && (
+                              <span className="ml-1 text-[10px] text-amber-500">
+                                ✨
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-[11px] text-zinc-500">
+                            {trip.startDate} ~ {trip.endDate}
+                          </p>
+                          <p className="mt-1 text-[10px] text-zinc-400">
+                            {trip.country}
+                          </p>
+                        </div>
+                        <p className="text-[10px] text-zinc-500">
+                          상세 일정을 보려면 탭하세요
+                        </p>
+                      </Link>
+                      {isOwner && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTrip(trip.id)}
+                          className="mt-1 w-full text-[10px] text-zinc-500 underline underline-offset-2 hover:text-zinc-800 dark:hover:text-zinc-200"
+                        >
+                          이 여행 삭제
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
       </main>
     </div>
   );
