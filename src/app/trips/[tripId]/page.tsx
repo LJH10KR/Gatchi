@@ -175,6 +175,59 @@ export default function TripDetailPage() {
     }
   };
 
+  const calendarDays = useMemo(() => {
+    if (!trip?.startDate || !trip?.endDate) return [];
+    const start = new Date(`${trip.startDate}T00:00:00`);
+    const end = new Date(`${trip.endDate}T00:00:00`);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
+
+    const firstOfMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+    const startWeekday = firstOfMonth.getDay(); // 0(일)~6(토)
+    const gridStart = new Date(firstOfMonth);
+    gridStart.setDate(firstOfMonth.getDate() - startWeekday);
+
+    const result: {
+      date: string;
+      inMonth: boolean;
+      inRange: boolean;
+      hasDay: boolean;
+      isSelected: boolean;
+    }[] = [];
+
+    for (let i = 0; i < 42; i += 1) {
+      const d = new Date(gridStart);
+      d.setDate(gridStart.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      const inMonth =
+        d.getFullYear() === firstOfMonth.getFullYear() &&
+        d.getMonth() === firstOfMonth.getMonth();
+      const inRange = d >= start && d <= end;
+      const dayForDate = days.find((day) => day.date === iso);
+      const isSelected =
+        !!dayForDate && selectedDayId === dayForDate.id;
+
+      result.push({
+        date: iso,
+        inMonth,
+        inRange,
+        hasDay: !!dayForDate,
+        isSelected,
+      });
+    }
+    return result;
+  }, [trip, days, selectedDayId]);
+
+  const handleClickCalendarDay = (dateStr: string) => {
+    const existing = days.find((d) => d.date === dateStr);
+    if (existing) {
+      setSelectedDayId(existing.id);
+      return;
+    }
+    if (isOwner) {
+      setNewDayDate(dateStr);
+    }
+  };
+
   if (!trip) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-black">
@@ -202,6 +255,57 @@ export default function TripDetailPage() {
 
         {error && (
           <p className="mb-3 text-xs text-red-500 dark:text-red-400">{error}</p>
+        )}
+
+        {calendarDays.length > 0 && (
+          <section className="mb-5 rounded-2xl bg-zinc-50 p-3 text-xs dark:bg-zinc-800">
+            <p className="mb-2 text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+              여행 캘린더
+            </p>
+            <div className="mb-1 grid grid-cols-7 gap-1 text-[10px] text-zinc-400">
+              {["일", "월", "화", "수", "목", "금", "토"].map((label) => (
+                <span
+                  key={label}
+                  className="text-center"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((day) => {
+                const dayNumber = Number(day.date.slice(8, 10));
+                const baseClasses =
+                  "flex aspect-square items-center justify-center rounded-full text-[11px]";
+                let stateClasses =
+                  "text-zinc-400 dark:text-zinc-600 bg-transparent";
+
+                if (day.inRange) {
+                  stateClasses =
+                    "bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-50";
+                }
+                if (day.hasDay) {
+                  stateClasses =
+                    "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900";
+                }
+                if (day.isSelected) {
+                  stateClasses =
+                    "bg-emerald-500 text-white dark:bg-emerald-400 dark:text-zinc-900";
+                }
+
+                return (
+                  <button
+                    key={day.date}
+                    type="button"
+                    onClick={() => handleClickCalendarDay(day.date)}
+                    className={`${baseClasses} ${stateClasses}`}
+                  >
+                    {dayNumber}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         <section className="mb-5 border-b border-zinc-200 pb-4 dark:border-zinc-700">
