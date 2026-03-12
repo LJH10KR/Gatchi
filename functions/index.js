@@ -63,6 +63,28 @@ export const onRequestCreated = onDocumentCreated(
         "failures",
       );
       console.log("Responses:", JSON.stringify(response.responses, null, 2));
+
+      // 죽은 토큰 자동 정리
+      const dbForCleanup = getFirestore();
+      await Promise.all(
+        response.responses.map((r, index) => {
+          if (
+            !r.success &&
+            r.error &&
+            r.error.code === "messaging/registration-token-not-registered"
+          ) {
+            const tokenToDelete = tokens[index];
+            console.log("Deleting invalid token for user", toUid, tokenToDelete);
+            return dbForCleanup
+              .collection("users")
+              .doc(toUid)
+              .collection("notificationTokens")
+              .doc(tokenToDelete)
+              .delete();
+          }
+          return Promise.resolve();
+        }),
+      );
     } catch (err) {
       console.error("Error sending push", err);
     }
