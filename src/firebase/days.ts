@@ -1,10 +1,13 @@
 import {
   addDoc,
   collection,
+  doc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   type Unsubscribe,
+  writeBatch,
 } from "firebase/firestore";
 
 import { db } from "./firebase";
@@ -30,7 +33,7 @@ export function listenTripDays(
         id: docSnap.id,
         tripId,
         date: data.date ?? "",
-        dayIndex: data.dayIndex ?? index + 1,
+        dayIndex: index + 1,
       };
     });
     callback(days);
@@ -40,12 +43,28 @@ export function listenTripDays(
 export async function createTripDay(params: {
   tripId: string;
   date: string;
-  dayIndex: number;
 }) {
   const ref = collection(db, "trips", params.tripId, "days");
   await addDoc(ref, {
     date: params.date,
-    dayIndex: params.dayIndex,
   });
 }
+
+export async function deleteTripDayWithPlans(params: {
+  tripId: string;
+  dayId: string;
+}) {
+  const dayRef = doc(db, "trips", params.tripId, "days", params.dayId);
+  const plansRef = collection(dayRef, "plans");
+  const snapshot = await getDocs(plansRef);
+
+  const batch = writeBatch(db);
+  snapshot.forEach((planDoc) => {
+    batch.delete(planDoc.ref);
+  });
+  batch.delete(dayRef);
+
+  await batch.commit();
+}
+
 

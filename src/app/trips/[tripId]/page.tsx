@@ -6,7 +6,12 @@ import { doc, getDoc } from "firebase/firestore";
 
 import { db } from "@/firebase/firebase";
 import type { Trip } from "@/firebase/trips";
-import { listenTripDays, type TripDay, createTripDay } from "@/firebase/days";
+import {
+  listenTripDays,
+  type TripDay,
+  createTripDay,
+  deleteTripDayWithPlans,
+} from "@/firebase/days";
 import {
   createPlan,
   deletePlan,
@@ -159,17 +164,42 @@ export default function TripDetailPage() {
   const handleAddDay = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!trip || !isOwner || !newDayDate) return;
+
+    const duplicate = days.some((d) => d.date === newDayDate);
+    if (duplicate) {
+      setError("같은 날짜가 이미 추가되어 있어요.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       await createTripDay({
         tripId: trip.id,
         date: newDayDate,
-        dayIndex: days.length + 1,
       });
       setNewDayDate("");
     } catch (err: any) {
       setError(err?.message ?? "날짜를 추가하는 중 오류가 발생했어요.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteDay = async () => {
+    if (!trip || !isOwner || !selectedDayId) return;
+    if (!confirm("선택한 날짜와 그 날짜의 모든 일정을 삭제할까요?")) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      await deleteTripDayWithPlans({
+        tripId: trip.id,
+        dayId: selectedDayId,
+      });
+      setSelectedDayId(null);
+      resetPlanForm();
+    } catch (err: any) {
+      setError(err?.message ?? "날짜를 삭제하는 중 오류가 발생했어요.");
     } finally {
       setSaving(false);
     }
@@ -197,7 +227,10 @@ export default function TripDetailPage() {
     for (let i = 0; i < 42; i += 1) {
       const d = new Date(gridStart);
       d.setDate(gridStart.getDate() + i);
-      const iso = d.toISOString().slice(0, 10);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const dayStr = String(d.getDate()).padStart(2, "0");
+      const iso = `${year}-${month}-${dayStr}`;
       const inMonth =
         d.getFullYear() === firstOfMonth.getFullYear() &&
         d.getMonth() === firstOfMonth.getMonth();
@@ -216,6 +249,18 @@ export default function TripDetailPage() {
     }
     return result;
   }, [trip, days, selectedDayId]);
+
+  const getDayLabel = (dateStr: string) => {
+    if (!trip?.startDate) return "";
+    const start = new Date(`${trip.startDate}T00:00:00`);
+    const current = new Date(`${dateStr}T00:00:00`);
+    const diffMs = current.getTime() - start.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) {
+      return `D${diffDays}일`;
+    }
+    return `${diffDays + 1}일차`;
+  };
 
   const handleClickCalendarDay = (dateStr: string) => {
     const existing = days.find((d) => d.date === dateStr);
@@ -337,7 +382,7 @@ export default function TripDetailPage() {
                   }`}
                 >
                   <span className="block text-[10px] text-zinc-400">
-                    {day.dayIndex}일차
+                    {getDayLabel(day.date)}
                   </span>
                   <span className="block">{day.date}</span>
                 </button>
@@ -346,24 +391,36 @@ export default function TripDetailPage() {
           )}
 
           {isOwner && (
-            <form
-              onSubmit={handleAddDay}
-              className="flex items-center gap-2 text-xs"
-            >
-              <input
-                type="date"
-                value={newDayDate}
-                onChange={(e) => setNewDayDate(e.target.value)}
-                className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-              />
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            <>
+              <form
+                onSubmit={handleAddDay}
+                className="flex items-center gap-2 text-xs"
               >
-                날짜 추가
-              </button>
-            </form>
+                <input
+                  type="date"
+                  value={newDayDate}
+                  onChange={(e) => setNewDayDate(e.target.value)}
+                  className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                />
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                >
+                  날짜 추가
+                </button>
+              </form>
+              {selectedDayId && (
+                <button
+                  type="button"
+                  onClick={handleDeleteDay}
+                  disabled={saving}
+                  className="mt-2 text-[10px] text-red-500 underline underline-offset-2"
+                >
+                  선택한 날짜 삭제 (일정 포함)
+                </button>
+              )}
+            </>
           )}
         </section>
 
