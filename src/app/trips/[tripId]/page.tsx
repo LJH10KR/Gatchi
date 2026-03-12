@@ -20,6 +20,13 @@ import {
   type Plan,
 } from "@/firebase/plans";
 import { useAuth } from "@/context/AuthContext";
+import { addMemberToTrip } from "@/firebase/trips";
+import {
+  findUserByEmail,
+  getUsersByUids,
+  type AppUser,
+} from "@/firebase/users";
+import { sendTripRequest } from "@/firebase/requests";
 
 export default function TripDetailPage() {
   const params = useParams<{ tripId: string }>();
@@ -42,6 +49,12 @@ export default function TripDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [participants, setParticipants] = useState<AppUser[]>([]);
+  const [memberEmail, setMemberEmail] = useState("");
+  const [memberLoading, setMemberLoading] = useState(false);
+  const [requestTargetUid, setRequestTargetUid] = useState<string | null>(null);
+  const [requestMessage, setRequestMessage] = useState("");
+
   const isOwner = useMemo(
     () => !!user && !!trip && user.uid === trip.ownerUid,
     [user, trip],
@@ -53,15 +66,28 @@ export default function TripDetailPage() {
       const snap = await getDoc(ref);
       if (snap.exists()) {
         const data = snap.data() as any;
-        setTrip({
+        const tripData: Trip = {
           id: snap.id,
           title: data.title ?? "",
           country: data.country ?? "",
           startDate: data.startDate ?? "",
           endDate: data.endDate ?? "",
           ownerUid: data.ownerUid,
+          members: data.members ?? [],
           createdAt: data.createdAt?.toDate?.(),
-        });
+        };
+        setTrip(tripData);
+
+        const memberUids = Array.from(
+          new Set<string>([tripData.ownerUid, ...(tripData.members ?? [])]),
+        );
+        if (memberUids.length > 0) {
+          const users = await getUsersByUids(memberUids);
+          setParticipants(users);
+          if (!requestTargetUid && users.length > 0) {
+            setRequestTargetUid(users[0].uid);
+          }
+        }
       }
     }
     fetchTrip();
@@ -114,9 +140,7 @@ export default function TripDetailPage() {
     setSaving(true);
     setError(null);
 
-    const items = planItems
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+    const items = planItems.map((s) => s.trim()).filter((s) => s.length > 0);
 
     try {
       if (selectedPlanId) {
@@ -205,6 +229,62 @@ export default function TripDetailPage() {
     }
   };
 
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trip || !isOwner) return;
+    const email = memberEmail.trim();
+    if (!email) return;
+
+    setMemberLoading(true);
+    setError(null);
+    try {
+      const existing = participants.find(
+        (p) => p.email && p.email.toLowerCase() === email.toLowerCase(),
+      );
+      if (existing) {
+        setError("이미 동행자로 추가된 이메일입니다.");
+        return;
+      }
+
+      const user = await findUserByEmail(email);
+      if (!user) {
+        setError("해당 이메일을 가진 사용자를 찾을 수 없어요.");
+        return;
+      }
+
+      await addMemberToTrip(trip.id, user.uid);
+      setParticipants((prev) => [...prev, user]);
+      if (!requestTargetUid) {
+        setRequestTargetUid(user.uid);
+      }
+      setMemberEmail("");
+    } catch (err: any) {
+      setError(err?.message ?? "동행자를 추가하는 중 오류가 발생했어요.");
+    } finally {
+      setMemberLoading(false);
+    }
+  };
+
+  const handleSendRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trip || !requestTargetUid || !requestMessage.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await sendTripRequest({
+        tripId: trip.id,
+        toUid: requestTargetUid,
+        title: "동행자 요청",
+        message: requestMessage.trim(),
+      });
+      setRequestMessage("");
+    } catch (err: any) {
+      setError(err?.message ?? "요청을 보내는 중 오류가 발생했어요.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const calendarDays = useMemo(() => {
     if (!trip?.startDate || !trip?.endDate) return [];
     const start = new Date(`${trip.startDate}T00:00:00`);
@@ -236,8 +316,7 @@ export default function TripDetailPage() {
         d.getMonth() === firstOfMonth.getMonth();
       const inRange = d >= start && d <= end;
       const dayForDate = days.find((day) => day.date === iso);
-      const isSelected =
-        !!dayForDate && selectedDayId === dayForDate.id;
+      const isSelected = !!dayForDate && selectedDayId === dayForDate.id;
 
       result.push({
         date: iso,
@@ -309,10 +388,7 @@ export default function TripDetailPage() {
             </p>
             <div className="mb-1 grid grid-cols-7 gap-1 text-[10px] text-zinc-400">
               {["일", "월", "화", "수", "목", "금", "토"].map((label) => (
-                <span
-                  key={label}
-                  className="text-center"
-                >
+                <span key={label} className="text-center">
                   {label}
                 </span>
               ))}
@@ -353,6 +429,65 @@ export default function TripDetailPage() {
           </section>
         )}
 
+        <section className="mb-5 border-b border-zinc-200 pb-4 text-xs dark:border-zinc-700">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              동행자
+            </h2>
+            {isOwner && (
+              <span className="text-[10px] text-zinc-500">
+                이메일로 동행자를 추가해 보세요
+              </span>
+            )}
+          </div>
+
+          {participants.length === 0 ? (
+            <p className="text-xs text-zinc-500">
+              아직 동행자가 없어요. 이메일로 동행자를 추가해 보세요.
+            </p>
+          ) : (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {participants.map((p) => (
+                <div
+                  key={p.uid}
+                  className="rounded-full bg-zinc-100 px-3 py-1 text-[11px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                >
+                  <span className="font-medium">
+                    {p.displayName || p.email || "알 수 없는 사용자"}
+                  </span>
+                  {p.uid === trip.ownerUid && (
+                    <span className="ml-1 text-[10px] text-amber-500">
+                      (호스트)
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isOwner && (
+            <form
+              onSubmit={handleAddMember}
+              className="flex items-center gap-2"
+            >
+              <input
+                type="email"
+                value={memberEmail}
+                onChange={(e) => setMemberEmail(e.target.value)}
+                placeholder="동행자 이메일"
+                className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+              />
+              <button
+                type="submit"
+                disabled={memberLoading}
+                className="rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                동행자 추가
+              </button>
+            </form>
+          )}
+        </section>
+
         <section className="mb-5 border-b border-zinc-200 pb-4 dark:border-zinc-700">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
@@ -365,9 +500,7 @@ export default function TripDetailPage() {
             )}
           </div>
           {days.length === 0 ? (
-            <p className="text-xs text-zinc-500">
-              아직 등록된 날짜가 없어요.
-            </p>
+            <p className="text-xs text-zinc-500">아직 등록된 날짜가 없어요.</p>
           ) : (
             <div className="mb-3 flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
               {days.map((day) => (
@@ -529,10 +662,7 @@ export default function TripDetailPage() {
                 </label>
                 <div className="space-y-2">
                   {planItems.map((value, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2"
-                    >
+                    <div key={index} className="flex items-center gap-2">
                       <input
                         type="text"
                         value={value}
@@ -606,8 +736,59 @@ export default function TripDetailPage() {
             </form>
           )}
         </section>
+
+        <section className="mt-6 border-t border-zinc-200 pt-4 text-xs dark:border-zinc-700">
+          <h2 className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+            동행자에게 요청 보내기
+          </h2>
+
+          {participants.length === 0 ? (
+            <p className="text-xs text-zinc-500">
+              동행자가 아직 없어요. 먼저 동행자를 추가해 주세요.
+            </p>
+          ) : (
+            <form onSubmit={handleSendRequest} className="space-y-2">
+              <div className="space-y-1">
+                <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                  대상
+                </label>
+                <select
+                  value={requestTargetUid ?? ""}
+                  onChange={(e) => setRequestTargetUid(e.target.value || null)}
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                >
+                  {participants.map((p) => (
+                    <option key={p.uid} value={p.uid}>
+                      {p.displayName || p.email || p.uid}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                  메시지
+                </label>
+                <textarea
+                  value={requestMessage}
+                  onChange={(e) => setRequestMessage(e.target.value)}
+                  rows={3}
+                  placeholder="예: 화장실 휴지 좀 가져와 줄 수 있어?"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving || !requestMessage.trim()}
+                className="w-full rounded-xl bg-emerald-500 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-emerald-600 disabled:opacity-60"
+              >
+                요청 보내기
+              </button>
+            </form>
+          )}
+        </section>
       </main>
     </div>
   );
 }
-

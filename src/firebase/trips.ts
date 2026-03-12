@@ -1,5 +1,6 @@
 import {
   addDoc,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -21,6 +22,7 @@ export type Trip = {
   startDate: string;
   endDate: string;
   ownerUid: string;
+  members?: string[];
   createdAt?: Date;
 };
 
@@ -38,6 +40,7 @@ export function listenAllTrips(callback: (trips: Trip[]) => void): Unsubscribe {
         startDate: data.startDate ?? "",
         endDate: data.endDate ?? "",
         ownerUid: data.ownerUid,
+        members: data.members ?? [],
         createdAt: data.createdAt?.toDate?.(),
       };
     });
@@ -66,6 +69,7 @@ export function listenUserTrips(
         startDate: data.startDate ?? "",
         endDate: data.endDate ?? "",
         ownerUid: data.ownerUid,
+        members: data.members ?? [],
         createdAt: data.createdAt?.toDate?.(),
       };
     });
@@ -96,4 +100,12 @@ export async function renameTrip(tripId: string, title: string) {
   const ref = doc(db, "trips", tripId);
   await updateDoc(ref, { title });
 }
+
+export async function addMemberToTrip(tripId: string, uid: string) {
+  const ref = doc(db, "trips", tripId);
+  await updateDoc(ref, {
+    members: arrayUnion(uid),
+  });
+}
+
 
