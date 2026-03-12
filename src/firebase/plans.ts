@@ -33,20 +33,27 @@ export function listenPlansForDay(
   const q = query(ref, orderBy("order", "asc"));
 
   return onSnapshot(q, (snapshot) => {
-    const plans: Plan[] = snapshot.docs.map((docSnap, index) => {
-      const data = docSnap.data() as any;
-      return {
-        id: docSnap.id,
-        tripId,
-        dayId,
-        title: data.title ?? "",
-        startTime: data.startTime,
-        endTime: data.endTime,
-        memo: data.memo,
-        items: data.items ?? [],
-        order: data.order ?? index,
-      };
-    });
+    const plans: Plan[] = snapshot.docs
+      .map((docSnap, index) => {
+        const data = docSnap.data() as any;
+        return {
+          id: docSnap.id,
+          tripId,
+          dayId,
+          title: data.title ?? "",
+          startTime: data.startTime,
+          endTime: data.endTime,
+          memo: data.memo,
+          items: data.items ?? [],
+          order: data.order ?? index,
+        };
+      })
+      .sort((a, b) => {
+        const aKey = a.startTime || "";
+        const bKey = b.startTime || "";
+        if (aKey === bKey) return 0;
+        return aKey < bKey ? -1 : 1;
+      });
     callback(plans);
   });
 }
