@@ -62,6 +62,7 @@ export const onRequestCreated = onDocumentCreated(
         response.failureCount,
         "failures",
       );
+      console.log("Responses:", JSON.stringify(response.responses, null, 2));
     } catch (err) {
       console.error("Error sending push", err);
     }
