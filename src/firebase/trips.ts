@@ -24,6 +24,27 @@ export type Trip = {
   createdAt?: Date;
 };
 
+export function listenAllTrips(callback: (trips: Trip[]) => void): Unsubscribe {
+  const ref = collection(db, "trips");
+  const q = query(ref, orderBy("startDate", "asc"));
+
+  return onSnapshot(q, (snapshot) => {
+    const trips: Trip[] = snapshot.docs.map((docSnap) => {
+      const data = docSnap.data() as any;
+      return {
+        id: docSnap.id,
+        title: data.title ?? "",
+        country: data.country ?? "",
+        startDate: data.startDate ?? "",
+        endDate: data.endDate ?? "",
+        ownerUid: data.ownerUid,
+        createdAt: data.createdAt?.toDate?.(),
+      };
+    });
+    callback(trips);
+  });
+}
+
 export function listenUserTrips(
   uid: string,
   callback: (trips: Trip[]) => void,
