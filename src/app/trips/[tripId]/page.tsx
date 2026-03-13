@@ -81,6 +81,11 @@ export default function TripDetailPage() {
     [days, selectedDayId],
   );
 
+  const selectedPlan = useMemo(
+    () => plans.find((p) => p.id === selectedPlanId) ?? null,
+    [plans, selectedPlanId],
+  );
+
   useEffect(() => {
     async function fetchTrip() {
       const ref = doc(db, "trips", tripId);
@@ -762,23 +767,35 @@ export default function TripDetailPage() {
                       type="button"
                       onClick={() => {
                         handleSelectPlan(plan);
-                        setShowPlanForm(true);
+                        setShowPlanForm(false);
                       }}
-                      className={`flex h-28 min-w-[220px] snap-start flex-col justify-between rounded-2xl px-4 py-3 text-xs text-zinc-800 shadow-sm dark:text-zinc-100 ${
+                      className={`flex h-28 min-w-[220px] snap-start flex-col justify-between rounded-2xl px-4 py-3 text-xs shadow-sm ${
                         selectedPlanId === plan.id
                           ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                          : "bg-zinc-50 dark:bg-zinc-800"
+                          : "bg-zinc-50 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
                       }`}
                     >
                       <div>
                         <p className="text-sm font-semibold">{plan.title}</p>
-                        <p className="mt-1 text-[11px] text-zinc-500">
+                        <p
+                          className={`mt-1 text-[11px] ${
+                            selectedPlanId === plan.id
+                              ? "text-zinc-200 dark:text-zinc-700"
+                              : "text-zinc-500"
+                          }`}
+                        >
                           {plan.startTime || "시간 미정"} ~{" "}
                           {plan.endTime || "시간 미정"}
                         </p>
                       </div>
                       {plan.memo && (
-                        <p className="line-clamp-2 text-[10px] text-zinc-400">
+                        <p
+                          className={`line-clamp-2 text-[10px] ${
+                            selectedPlanId === plan.id
+                              ? "text-zinc-200/80 dark:text-zinc-700"
+                              : "text-zinc-400"
+                          }`}
+                        >
                           {plan.memo}
                         </p>
                       )}
@@ -795,6 +812,63 @@ export default function TripDetailPage() {
                     >
                       <span className="mb-1 text-lg font-bold">+</span>
                       <span>새 일정 추가</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {selectedPlan && !showPlanForm && (
+                <div className="mb-3 rounded-2xl bg-zinc-50 p-3 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                  <p className="text-sm font-semibold">{selectedPlan.title}</p>
+
+                  <div className="mt-2 space-y-2">
+                    <div>
+                      <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
+                        시간
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-300">
+                        {selectedPlan.startTime || "시간 미정"} ~{" "}
+                        {selectedPlan.endTime || "시간 미정"}
+                      </p>
+                    </div>
+
+                    {selectedPlan.memo && (
+                      <div>
+                        <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
+                          메모
+                        </p>
+                        <p className="mt-0.5 whitespace-pre-wrap text-[11px] text-zinc-500 dark:text-zinc-300">
+                          {selectedPlan.memo}
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedPlan.items && selectedPlan.items.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
+                          준비물
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {selectedPlan.items.map((item, idx) => (
+                            <span
+                              key={`${selectedPlan.id}-item-${idx}`}
+                              className="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] text-zinc-700 dark:bg-zinc-700 dark:text-zinc-100"
+                            >
+                              {item}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPlanForm(true)}
+                      className="mt-3 rounded-xl border border-zinc-300 px-3 py-2 text-[11px] font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-700"
+                    >
+                      일정 수정하기
                     </button>
                   )}
                 </div>
