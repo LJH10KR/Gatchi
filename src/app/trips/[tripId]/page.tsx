@@ -482,54 +482,6 @@ export default function TripDetailPage() {
           <p className="mb-3 text-xs text-red-500 dark:text-red-400">{error}</p>
         )}
 
-        {calendarDays.length > 0 && (
-          <section className="mb-5 rounded-2xl bg-zinc-50 p-3 text-xs dark:bg-zinc-800">
-            <p className="mb-2 text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
-              여행 캘린더
-            </p>
-            <div className="mb-1 grid grid-cols-7 gap-1 text-[10px] text-zinc-400">
-              {["일", "월", "화", "수", "목", "금", "토"].map((label) => (
-                <span key={label} className="text-center">
-                  {label}
-                </span>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {calendarDays.map((day) => {
-                const dayNumber = Number(day.date.slice(8, 10));
-                const baseClasses =
-                  "flex aspect-square items-center justify-center rounded-full text-[11px]";
-                let stateClasses =
-                  "text-zinc-400 dark:text-zinc-600 bg-transparent";
-
-                if (day.inRange) {
-                  stateClasses =
-                    "bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-50";
-                }
-                if (day.hasDay) {
-                  stateClasses =
-                    "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900";
-                }
-                if (day.isSelected) {
-                  stateClasses =
-                    "bg-emerald-500 text-white dark:bg-emerald-400 dark:text-zinc-900";
-                }
-
-                return (
-                  <button
-                    key={day.date}
-                    type="button"
-                    onClick={() => handleClickCalendarDay(day.date)}
-                    className={`${baseClasses} ${stateClasses}`}
-                  >
-                    {dayNumber}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
         <section className="mb-5 border-b border-zinc-200 pb-4 dark:border-zinc-700">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
@@ -550,6 +502,54 @@ export default function TripDetailPage() {
               </div>
             )}
           </div>
+
+          {calendarDays.length > 0 && (
+            <div className="mb-3 rounded-2xl bg-zinc-50 p-3 text-xs dark:bg-zinc-800">
+              <p className="mb-2 text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                여행 캘린더
+              </p>
+              <div className="mb-1 grid grid-cols-7 gap-1 text-[10px] text-zinc-400">
+                {["일", "월", "화", "수", "목", "금", "토"].map((label) => (
+                  <span key={label} className="text-center">
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {calendarDays.map((day) => {
+                  const dayNumber = Number(day.date.slice(8, 10));
+                  const baseClasses =
+                    "flex aspect-square items-center justify-center rounded-full text-[11px]";
+                  let stateClasses =
+                    "text-zinc-400 dark:text-zinc-600 bg-transparent";
+
+                  if (day.inRange) {
+                    stateClasses =
+                      "bg-zinc-100 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-50";
+                  }
+                  if (day.hasDay) {
+                    stateClasses =
+                      "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900";
+                  }
+                  if (day.isSelected) {
+                    stateClasses =
+                      "bg-emerald-500 text-white dark:bg-emerald-400 dark:text-zinc-900";
+                  }
+
+                  return (
+                    <button
+                      key={day.date}
+                      type="button"
+                      onClick={() => handleClickCalendarDay(day.date)}
+                      className={`${baseClasses} ${stateClasses}`}
+                    >
+                      {dayNumber}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {days.length === 0 ? (
             <p className="text-xs text-zinc-500">아직 등록된 날짜가 없어요.</p>
