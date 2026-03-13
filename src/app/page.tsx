@@ -29,6 +29,7 @@ export default function Home() {
   const [newStartDate, setNewStartDate] = useState("");
   const [newEndDate, setNewEndDate] = useState("");
   const [showCreateTrip, setShowCreateTrip] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   useEffect(() => {
     const unsubscribe = listenAllTrips((data) => {
@@ -135,9 +136,49 @@ export default function Home() {
     }
   };
 
+  const userInitial = (user?.displayName ?? user?.email ?? "U")
+    .charAt(0)
+    .toUpperCase();
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-black">
-      <main className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg dark:bg-zinc-900">
+      <main className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-lg dark:bg-zinc-900">
+        {user && (
+          <div className="absolute right-4 top-4">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowUserMenu((prev) => !prev)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                {userInitial}
+              </button>
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white p-3 text-xs shadow-lg ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+                  <p className="mb-2 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+                    {user.email ?? "이메일 없음"}
+                  </p>
+                  <Link
+                    href="/settings"
+                    className="block rounded-lg px-2 py-1 text-[11px] font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-700"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    사용자 설정
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    disabled={loading || authLoading}
+                    className="mt-1 block w-full rounded-lg px-2 py-1 text-left text-[11px] font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                  >
+                    로그아웃
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <header className="mb-6 text-center">
           <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
             travelespana
@@ -145,36 +186,7 @@ export default function Home() {
           {/* <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             스페인 여행 플래너 · 로그인하고 나만의 여행을 만들어 보세요.
           </p> */}
-          {user && (
-            <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
-              알림 설정은{" "}
-              <Link
-                href="/settings"
-                className="underline underline-offset-2 hover:text-zinc-600 dark:hover:text-zinc-300"
-              >
-                설정 페이지
-              </Link>
-              에서 변경할 수 있어요.
-            </p>
-          )}
         </header>
-
-        {user && (
-          <div className="mb-4 rounded-xl bg-zinc-50 p-3 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-            <p className="font-medium">현재 로그인 계정</p>
-            <p className="truncate text-xs text-zinc-500">
-              {user.email ?? "이메일 없음"}
-            </p>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              disabled={loading || authLoading}
-              className="mt-2 text-xs font-medium text-zinc-700 underline underline-offset-2 dark:text-zinc-300"
-            >
-              로그아웃
-            </button>
-          </div>
-        )}
 
         {!user && (
           <>
