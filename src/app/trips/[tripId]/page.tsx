@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -55,10 +55,12 @@ export default function TripDetailPage() {
   const [requestTargetUid, setRequestTargetUid] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
   const [pendingSelectedDate, setPendingSelectedDate] = useState<string | null>(
     null,
   );
   const [showDayCarousel, setShowDayCarousel] = useState(true);
+  const scheduleSectionRef = useRef<HTMLDivElement | null>(null);
 
   const isOwner = useMemo(
     () => !!user && !!trip && user.uid === trip.ownerUid,
@@ -94,6 +96,14 @@ export default function TripDetailPage() {
         const memberUids = Array.from(
           new Set<string>([tripData.ownerUid, ...(tripData.members ?? [])]),
         );
+
+        if (!user) {
+          // 비로그인 사용자는 Firestore rules 상 users 컬렉션 read 권한이 없으므로
+          // 참여자 상세 정보는 조회하지 않습니다.
+          setParticipants([]);
+          return;
+        }
+
         if (memberUids.length > 0) {
           const users = await getUsersByUids(memberUids);
           setParticipants(users);
@@ -104,7 +114,7 @@ export default function TripDetailPage() {
       }
     }
     fetchTrip();
-  }, [tripId, requestTargetUid]);
+  }, [tripId, user, requestTargetUid]);
 
   useEffect(() => {
     const unsubscribe = listenTripDays(tripId, (d) => {
@@ -418,6 +428,16 @@ export default function TripDetailPage() {
     }
   };
 
+  useEffect(() => {
+    if (!selectedDayId) return;
+    if (!scheduleSectionRef.current) return;
+
+    scheduleSectionRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [selectedDayId]);
+
   if (!trip) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-black">
@@ -454,9 +474,14 @@ export default function TripDetailPage() {
             <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-zinc-500">
               <span className="mr-1">with</span>
               {participants.map((p) => (
-                <span
+                <button
                   key={p.uid}
-                  className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  type="button"
+                  onClick={() => {
+                    setRequestTargetUid(p.uid);
+                    setShowRequestModal(true);
+                  }}
+                  className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-700 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
                 >
                   <span className="font-medium">
                     {p.displayName || p.email || "알 수 없는 사용자"}
@@ -466,7 +491,7 @@ export default function TripDetailPage() {
                       (호스트)
                     </span>
                   )}
-                </span>
+                </button>
               ))}
             </div>
           )}
@@ -618,12 +643,13 @@ export default function TripDetailPage() {
           )}
         </section>
 
-        <section>
+        {selectedDayId && (
+        <section ref={scheduleSectionRef}>
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
               일정
             </h2>
-            {selectedDayId && isOwner && (
+            {isOwner && (
               <span className="text-[10px] text-zinc-500">
                 카드를 탭하면 수정할 수 있어요
               </span>
@@ -797,59 +823,7 @@ export default function TripDetailPage() {
             </form>
           )}
         </section>
-
-        <section className="mt-6 border-t border-zinc-200 pt-4 text-xs dark:border-zinc-700">
-          <h2 className="mb-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-            동행자에게 요청 보내기
-          </h2>
-
-          {participants.length === 0 ? (
-            <p className="text-xs text-zinc-500">
-              동행자가 아직 없어요. 먼저 동행자를 추가해 주세요.
-            </p>
-          ) : (
-            <form onSubmit={handleSendRequest} className="space-y-2">
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
-                  대상
-                </label>
-                <select
-                  value={requestTargetUid ?? ""}
-                  onChange={(e) => setRequestTargetUid(e.target.value || null)}
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                >
-                  {participants.map((p) => (
-                    <option key={p.uid} value={p.uid}>
-                      {p.displayName || p.email || p.uid}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
-                  메시지
-                </label>
-                <textarea
-                  value={requestMessage}
-                  onChange={(e) => setRequestMessage(e.target.value)}
-                  rows={3}
-                  placeholder="예: 화장실 휴지 좀 가져와 줄 수 있어?"
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={saving || !requestMessage.trim()}
-                className="w-full rounded-xl bg-emerald-500 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-emerald-600 disabled:opacity-60"
-              >
-                요청 보내기
-              </button>
-            </form>
-          )}
-        </section>
-
+        )}
         {isOwner && showAddMemberModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900">
@@ -890,6 +864,79 @@ export default function TripDetailPage() {
                     className="rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                   >
                     동행자 추가
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {participants.length > 0 && showRequestModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900">
+              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                동행자에게 요청 보내기
+              </h2>
+              <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                선택한 동행자에게 간단한 메시지를 보내 보세요.
+              </p>
+
+              <form
+                onSubmit={async (e) => {
+                  await handleSendRequest(e);
+                  if (!error) {
+                    setShowRequestModal(false);
+                    setRequestMessage("");
+                  }
+                }}
+                className="mt-3 space-y-3 text-xs"
+              >
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                    대상
+                  </label>
+                  <select
+                    value={requestTargetUid ?? ""}
+                    onChange={(evt) =>
+                      setRequestTargetUid(evt.target.value || null)
+                    }
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                  >
+                    {participants.map((p) => (
+                      <option key={p.uid} value={p.uid}>
+                        {p.displayName || p.email || p.uid}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                    메시지
+                  </label>
+                  <textarea
+                    value={requestMessage}
+                    onChange={(evt) => setRequestMessage(evt.target.value)}
+                    rows={3}
+                    placeholder="예: 화장실 휴지 좀 가져와 줄 수 있어?"
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowRequestModal(false)}
+                    className="rounded-xl border border-zinc-200 px-3 py-2 text-[11px] font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving || !requestMessage.trim()}
+                    className="rounded-xl bg-emerald-500 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-emerald-600 disabled:opacity-60"
+                  >
+                    요청 보내기
                   </button>
                 </div>
               </form>
