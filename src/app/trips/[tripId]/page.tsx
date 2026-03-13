@@ -54,6 +54,7 @@ export default function TripDetailPage() {
   const [memberLoading, setMemberLoading] = useState(false);
   const [requestTargetUid, setRequestTargetUid] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 
   const isOwner = useMemo(
     () => !!user && !!trip && user.uid === trip.ownerUid,
@@ -253,11 +254,11 @@ export default function TripDetailPage() {
     }
   };
 
-  const handleAddMember = async (e: React.FormEvent) => {
+  const handleAddMember = async (e: React.FormEvent): Promise<boolean> => {
     e.preventDefault();
-    if (!trip || !isOwner) return;
+    if (!trip || !isOwner) return false;
     const email = memberEmail.trim();
-    if (!email) return;
+    if (!email) return false;
 
     setMemberLoading(true);
     setError(null);
@@ -267,13 +268,13 @@ export default function TripDetailPage() {
       );
       if (existing) {
         setError("이미 동행자로 추가된 이메일입니다.");
-        return;
+        return false;
       }
 
       const user = await findUserByEmail(email);
       if (!user) {
         setError("해당 이메일을 가진 사용자를 찾을 수 없어요.");
-        return;
+        return false;
       }
 
       await addMemberToTrip(trip.id, user.uid);
@@ -282,12 +283,14 @@ export default function TripDetailPage() {
         setRequestTargetUid(user.uid);
       }
       setMemberEmail("");
+      return true;
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
         setError("동행자를 추가하는 중 오류가 발생했어요.");
       }
+      return false;
     } finally {
       setMemberLoading(false);
     }
@@ -396,12 +399,47 @@ export default function TripDetailPage() {
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-black">
       <main className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg dark:bg-zinc-900">
         <header className="mb-4">
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-            {trip.title}
-          </h1>
-          <p className="mt-1 text-xs text-zinc-500">
-            {trip.startDate} ~ {trip.endDate} · {trip.country}
-          </p>
+          <div className="mb-1 flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+                {trip.title}
+              </h1>
+              <p className="mt-1 text-xs text-zinc-500">
+                {trip.startDate} ~ {trip.endDate} · {trip.country}
+              </p>
+            </div>
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => setShowAddMemberModal(true)}
+                className="rounded-full bg-zinc-900 px-3 py-1.5 text-[11px] font-medium text-white shadow-sm hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                동행자 추가
+              </button>
+            )}
+          </div>
+
+          {participants.length > 0 && (
+            <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-zinc-500">
+              <span className="mr-1">with</span>
+              {participants.map((p) => (
+                <span
+                  key={p.uid}
+                  className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                >
+                  <span className="font-medium">
+                    {p.displayName || p.email || "알 수 없는 사용자"}
+                  </span>
+                  {p.uid === trip.ownerUid && (
+                    <span className="ml-1 text-[10px] text-amber-500">
+                      (호스트)
+                    </span>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
+
           {!isOwner && (
             <p className="mt-1 text-[11px] text-zinc-400">
               이 여행은 다른 사용자의 여행이에요. 읽기만 가능합니다.
@@ -460,65 +498,6 @@ export default function TripDetailPage() {
             </div>
           </section>
         )}
-
-        <section className="mb-5 border-b border-zinc-200 pb-4 text-xs dark:border-zinc-700">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-              동행자
-            </h2>
-            {isOwner && (
-              <span className="text-[10px] text-zinc-500">
-                이메일로 동행자를 추가해 보세요
-              </span>
-            )}
-          </div>
-
-          {participants.length === 0 ? (
-            <p className="text-xs text-zinc-500">
-              아직 동행자가 없어요. 이메일로 동행자를 추가해 보세요.
-            </p>
-          ) : (
-            <div className="mb-3 flex flex-wrap gap-2">
-              {participants.map((p) => (
-                <div
-                  key={p.uid}
-                  className="rounded-full bg-zinc-100 px-3 py-1 text-[11px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-                >
-                  <span className="font-medium">
-                    {p.displayName || p.email || "알 수 없는 사용자"}
-                  </span>
-                  {p.uid === trip.ownerUid && (
-                    <span className="ml-1 text-[10px] text-amber-500">
-                      (호스트)
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {isOwner && (
-            <form
-              onSubmit={handleAddMember}
-              className="flex items-center gap-2"
-            >
-              <input
-                type="email"
-                value={memberEmail}
-                onChange={(e) => setMemberEmail(e.target.value)}
-                placeholder="동행자 이메일"
-                className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-              />
-              <button
-                type="submit"
-                disabled={memberLoading}
-                className="rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-              >
-                동행자 추가
-              </button>
-            </form>
-          )}
-        </section>
 
         <section className="mb-5 border-b border-zinc-200 pb-4 dark:border-zinc-700">
           <div className="mb-2 flex items-center justify-between">
@@ -820,6 +799,53 @@ export default function TripDetailPage() {
             </form>
           )}
         </section>
+
+        {isOwner && showAddMemberModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900">
+              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                동행자 추가
+              </h2>
+              <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                함께 여행을 계획할 친구의 이메일을 입력해 주세요.
+              </p>
+
+              <form
+                onSubmit={async (e) => {
+                  const ok = await handleAddMember(e);
+                  if (ok) {
+                    setShowAddMemberModal(false);
+                  }
+                }}
+                className="mt-3 space-y-3 text-xs"
+              >
+                <input
+                  type="email"
+                  value={memberEmail}
+                  onChange={(evt) => setMemberEmail(evt.target.value)}
+                  placeholder="동행자 이메일"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddMemberModal(false)}
+                    className="rounded-xl border border-zinc-200 px-3 py-2 text-[11px] font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={memberLoading}
+                    className="rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                  >
+                    동행자 추가
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
