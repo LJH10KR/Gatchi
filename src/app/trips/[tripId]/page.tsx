@@ -13,12 +13,7 @@ import {
 
 import { db } from "@/firebase/firebase";
 import type { Trip } from "@/firebase/trips";
-import {
-  listenTripDays,
-  type TripDay,
-  createTripDay,
-  deleteTripDayWithPlans,
-} from "@/firebase/days";
+import { listenTripDays, type TripDay, createTripDay } from "@/firebase/days";
 import {
   createPlan,
   deletePlan,
@@ -45,8 +40,6 @@ export default function TripDetailPage() {
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
 
-  const [newDayDate, setNewDayDate] = useState("");
-
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [planTitle, setPlanTitle] = useState("");
   const [planStartTime, setPlanStartTime] = useState("");
@@ -66,7 +59,6 @@ export default function TripDetailPage() {
   const [pendingSelectedDate, setPendingSelectedDate] = useState<string | null>(
     null,
   );
-  const [showDayCarousel, setShowDayCarousel] = useState(true);
   const [dayHasPlans, setDayHasPlans] = useState<Record<string, boolean>>({});
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showPlanForm, setShowPlanForm] = useState(false);
@@ -267,58 +259,6 @@ export default function TripDetailPage() {
         setError(err.message);
       } else {
         setError("일정을 삭제하는 중 오류가 발생했어요.");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleAddDay = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!trip || !isOwner || !newDayDate) return;
-
-    const duplicate = days.some((d) => d.date === newDayDate);
-    if (duplicate) {
-      setError("같은 날짜가 이미 추가되어 있어요.");
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      await createTripDay({
-        tripId: trip.id,
-        date: newDayDate,
-      });
-      setNewDayDate("");
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("날짜를 추가하는 중 오류가 발생했어요.");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDeleteDay = async () => {
-    if (!trip || !isOwner || !selectedDayId) return;
-    if (!confirm("선택한 날짜와 그 날짜의 모든 일정을 삭제할까요?")) return;
-
-    setSaving(true);
-    setError(null);
-    try {
-      await deleteTripDayWithPlans({
-        tripId: trip.id,
-        dayId: selectedDayId,
-      });
-      setSelectedDayId(null);
-      resetPlanForm();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("날짜를 삭제하는 중 오류가 발생했어요.");
       }
     } finally {
       setSaving(false);
@@ -566,18 +506,9 @@ export default function TripDetailPage() {
               날짜 선택
             </h2>
             {isOwner && (
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-[10px] text-zinc-500">
-                  캘린더에서 날짜를 탭해 일정을 추가해 보세요
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowDayCarousel((prev) => !prev)}
-                  className="text-[10px] text-zinc-500 underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-300"
-                >
-                  {showDayCarousel ? "날짜 목록 숨기기" : "날짜 목록 보기"}
-                </button>
-              </div>
+              <span className="text-[10px] text-zinc-500">
+                캘린더에서 날짜를 탭해 일정을 추가해 보세요
+              </span>
             )}
           </div>
 
@@ -632,67 +563,25 @@ export default function TripDetailPage() {
           {days.length === 0 || daysWithVisiblePlans.length === 0 ? (
             <p className="text-xs text-zinc-500">아직 등록된 날짜가 없어요.</p>
           ) : (
-            showDayCarousel && (
-              <div className="mb-3 flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
-                {daysWithVisiblePlans.map((day) => (
-                  <button
-                    key={day.id}
-                    type="button"
-                    onClick={() => setSelectedDayId(day.id)}
-                    className={`min-w-[80px] rounded-xl px-3 py-2 text-xs ${
-                      selectedDayId === day.id
-                        ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                        : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-                    }`}
-                  >
-                    <span className="block text-[10px] text-zinc-400">
-                      {getDayLabel(day.date)}
-                    </span>
-                    <span className="block">{day.date}</span>
-                  </button>
-                ))}
-              </div>
-            )
-          )}
-
-          {isOwner && (
-            <>
-              <details className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                <summary className="cursor-pointer list-none text-[10px] underline underline-offset-2">
-                  고급 설정: 날짜를 직접 추가/삭제하기
-                </summary>
-                <div className="mt-2 space-y-2">
-                  <form
-                    onSubmit={handleAddDay}
-                    className="flex items-center gap-2 text-xs"
-                  >
-                    <input
-                      type="date"
-                      value={newDayDate}
-                      onChange={(e) => setNewDayDate(e.target.value)}
-                      className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                    />
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                    >
-                      날짜 추가
-                    </button>
-                  </form>
-                  {selectedDayId && (
-                    <button
-                      type="button"
-                      onClick={handleDeleteDay}
-                      disabled={saving}
-                      className="text-[10px] text-red-500 underline underline-offset-2"
-                    >
-                      선택한 날짜 삭제 (일정 포함)
-                    </button>
-                  )}
-                </div>
-              </details>
-            </>
+            <div className="mb-3 flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
+              {daysWithVisiblePlans.map((day) => (
+                <button
+                  key={day.id}
+                  type="button"
+                  onClick={() => setSelectedDayId(day.id)}
+                  className={`min-w-[80px] rounded-xl px-3 py-2 text-xs ${
+                    selectedDayId === day.id
+                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                      : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  }`}
+                >
+                  <span className="block text-[10px] text-zinc-400">
+                    {getDayLabel(day.date)}
+                  </span>
+                  <span className="block">{day.date}</span>
+                </button>
+              ))}
+            </div>
           )}
         </section>
 
@@ -929,7 +818,7 @@ export default function TripDetailPage() {
 
                   <div className="space-y-1">
                     <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
-                      준비물 (쉼표로 구분)
+                      준비물
                     </label>
                     <div className="space-y-2">
                       {planItems.map((value, index) => (
