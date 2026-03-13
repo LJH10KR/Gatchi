@@ -4,6 +4,7 @@ import {
   getDoc,
   getDocs,
   query,
+  setDoc,
   where,
 } from "firebase/firestore";
 
@@ -13,6 +14,7 @@ export type AppUser = {
   uid: string;
   email: string | null;
   displayName: string | null;
+  notificationsEnabled?: boolean;
 };
 
 export async function findUserByEmail(
@@ -26,11 +28,13 @@ export async function findUserByEmail(
   const data = docSnap.data() as {
     email?: string;
     displayName?: string;
+    notificationsEnabled?: boolean;
   };
   return {
     uid: docSnap.id,
     email: data.email ?? null,
     displayName: data.displayName ?? null,
+    notificationsEnabled: data.notificationsEnabled,
   };
 }
 
@@ -46,14 +50,39 @@ export async function getUsersByUids(
       const data = snap.data() as {
         email?: string;
         displayName?: string;
+        notificationsEnabled?: boolean;
       };
       results.push({
         uid,
         email: data.email ?? null,
         displayName: data.displayName ?? null,
+        notificationsEnabled: data.notificationsEnabled,
       });
     }),
   );
   return results;
 }
+
+export async function setNotificationsEnabled(
+  uid: string,
+  enabled: boolean,
+): Promise<void> {
+  const ref = doc(db, "users", uid);
+  await setDoc(
+    ref,
+    { notificationsEnabled: enabled },
+    { merge: true },
+  );
+}
+
+export async function getNotificationsEnabled(uid: string): Promise<boolean> {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return false;
+  const data = snap.data() as {
+    notificationsEnabled?: boolean;
+  };
+  return !!data.notificationsEnabled;
+}
+
 

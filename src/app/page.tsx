@@ -144,6 +144,18 @@ export default function Home() {
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             스페인 여행 플래너 · 로그인하고 나만의 여행을 만들어 보세요.
           </p>
+          {user && (
+            <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
+              알림 설정은{" "}
+              <Link
+                href="/settings"
+                className="underline underline-offset-2 hover:text-zinc-600 dark:hover:text-zinc-300"
+              >
+                설정 페이지
+              </Link>
+              에서 변경할 수 있어요.
+            </p>
+          )}
         </header>
 
         {user && (
