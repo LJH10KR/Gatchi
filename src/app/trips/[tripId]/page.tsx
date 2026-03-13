@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   collection,
@@ -443,14 +444,23 @@ export default function TripDetailPage() {
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-black">
       <main className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg dark:bg-zinc-900">
         <header className="mb-4">
-          <div className="mb-1 flex items-start justify-between gap-3">
-            <div>
-              <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-                {trip.title}
-              </h1>
-              <p className="mt-1 text-xs text-zinc-500">
-                {trip.startDate} ~ {trip.endDate} · {trip.country}
-              </p>
+          <div className="mb-2 flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <Link
+                href="/"
+                className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 text-xs text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                aria-label="메인으로 돌아가기"
+              >
+                ←
+              </Link>
+              <div>
+                <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+                  {trip.title}
+                </h1>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {trip.startDate} ~ {trip.endDate} · {trip.country}
+                </p>
+              </div>
             </div>
             {isOwner && (
               <button
