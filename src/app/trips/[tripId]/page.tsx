@@ -138,10 +138,6 @@ export default function TripDetailPage() {
         }
       }
 
-      if (!selectedDayId && d.length > 0) {
-        setSelectedDayId(d[0].id);
-      }
-
       // 각 날짜에 일정이 존재하는지 최소 1회만 확인
       (async () => {
         if (d.length === 0) return;
@@ -717,6 +713,7 @@ export default function TripDetailPage() {
                     setShowScheduleModal(false);
                     setShowPlanForm(false);
                     resetPlanForm();
+                    setSelectedDayId(null);
                   }}
                   className="text-[11px] text-zinc-500 underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
