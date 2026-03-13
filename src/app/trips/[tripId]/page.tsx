@@ -76,6 +76,11 @@ export default function TripDetailPage() {
     [user, trip],
   );
 
+  const selectedDay = useMemo(
+    () => days.find((d) => d.id === selectedDayId) ?? null,
+    [days, selectedDayId],
+  );
+
   useEffect(() => {
     async function fetchTrip() {
       const ref = doc(db, "trips", tripId);
@@ -688,36 +693,44 @@ export default function TripDetailPage() {
 
         {selectedDayId && showScheduleModal && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-            <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                    일정
-                  </h2>
-                  {isOwner && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        resetPlanForm();
-                        setShowPlanForm(true);
-                      }}
-                      className="rounded-full border border-zinc-200 px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                    >
-                      새 일정
-                    </button>
+            <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900 relative">
+              <div className="mb-2 flex items-start justify-between gap-2">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                      일정
+                    </h2>
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          resetPlanForm();
+                          setShowPlanForm(true);
+                        }}
+                        className="rounded-full border border-zinc-200 px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                      >
+                        새 일정
+                      </button>
+                    )}
+                  </div>
+                  {selectedDay && (
+                    <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      {selectedDay.date} · {getDayLabel(selectedDay.date)}
+                    </p>
                   )}
                 </div>
                 <button
                   type="button"
+                  aria-label="닫기"
                   onClick={() => {
                     setShowScheduleModal(false);
                     setShowPlanForm(false);
                     resetPlanForm();
                     setSelectedDayId(null);
                   }}
-                  className="text-[11px] text-zinc-500 underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-300"
+                  className="absolute right-4 top-2 text-2xl text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-200"
                 >
-                  닫기
+                  ×
                 </button>
               </div>
 
@@ -873,7 +886,9 @@ export default function TripDetailPage() {
                               type="button"
                               onClick={() =>
                                 setPlanItems((prev) => {
-                                  const next = prev.filter((_, i) => i !== index);
+                                  const next = prev.filter(
+                                    (_, i) => i !== index,
+                                  );
                                   return next.length > 0 ? next : [""];
                                 })
                               }
