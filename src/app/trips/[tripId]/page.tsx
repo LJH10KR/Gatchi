@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  query,
+} from "firebase/firestore";
 
 import { db } from "@/firebase/firebase";
 import type { Trip } from "@/firebase/trips";
@@ -61,6 +68,7 @@ export default function TripDetailPage() {
   );
   const [showDayCarousel, setShowDayCarousel] = useState(true);
   const scheduleSectionRef = useRef<HTMLDivElement | null>(null);
+  const [dayHasPlans, setDayHasPlans] = useState<Record<string, boolean>>({});
 
   const isOwner = useMemo(
     () => !!user && !!trip && user.uid === trip.ownerUid,
@@ -132,9 +140,37 @@ export default function TripDetailPage() {
       if (!selectedDayId && d.length > 0) {
         setSelectedDayId(d[0].id);
       }
+
+      // 각 날짜에 일정이 존재하는지 최소 1회만 확인
+      (async () => {
+        if (d.length === 0) return;
+
+        const updates: Record<string, boolean> = {};
+
+        await Promise.all(
+          d.map(async (day) => {
+            if (dayHasPlans[day.id] !== undefined) return;
+            const plansRef = collection(
+              db,
+              "trips",
+              tripId,
+              "days",
+              day.id,
+              "plans",
+            );
+            const q = query(plansRef, limit(1));
+            const snap = await getDocs(q);
+            updates[day.id] = !snap.empty;
+          }),
+        );
+
+        if (Object.keys(updates).length > 0) {
+          setDayHasPlans((prev) => ({ ...prev, ...updates }));
+        }
+      })();
     });
     return () => unsubscribe();
-  }, [tripId, selectedDayId, pendingSelectedDate]);
+  }, [tripId, selectedDayId, pendingSelectedDate, dayHasPlans]);
 
   useEffect(() => {
     if (!selectedDayId) {
@@ -143,6 +179,10 @@ export default function TripDetailPage() {
     }
     const unsubscribe = listenPlansForDay(tripId, selectedDayId, (p) => {
       setPlans(p);
+      setDayHasPlans((prev) => ({
+        ...prev,
+        [selectedDayId]: p.length > 0,
+      }));
     });
     return () => unsubscribe();
   }, [tripId, selectedDayId]);
@@ -375,18 +415,27 @@ export default function TripDetailPage() {
         d.getMonth() === firstOfMonth.getMonth();
       const inRange = d >= start && d <= end;
       const dayForDate = days.find((day) => day.date === iso);
+      const hasPlans =
+        dayForDate && dayHasPlans[dayForDate.id] !== undefined
+          ? dayHasPlans[dayForDate.id]
+          : false;
       const isSelected = !!dayForDate && selectedDayId === dayForDate.id;
 
       result.push({
         date: iso,
         inMonth,
         inRange,
-        hasDay: !!dayForDate,
+        hasDay: !!hasPlans,
         isSelected,
       });
     }
     return result;
-  }, [trip, days, selectedDayId]);
+  }, [trip, days, selectedDayId, dayHasPlans]);
+
+  const daysWithVisiblePlans = useMemo(
+    () => days.filter((day) => dayHasPlans[day.id]),
+    [days, dayHasPlans],
+  );
 
   const getDayLabel = (dateStr: string) => {
     if (!trip?.startDate) return "";
@@ -576,12 +625,12 @@ export default function TripDetailPage() {
             </div>
           )}
 
-          {days.length === 0 ? (
+          {days.length === 0 || daysWithVisiblePlans.length === 0 ? (
             <p className="text-xs text-zinc-500">아직 등록된 날짜가 없어요.</p>
           ) : (
             showDayCarousel && (
               <div className="mb-3 flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
-                {days.map((day) => (
+                {daysWithVisiblePlans.map((day) => (
                   <button
                     key={day.id}
                     type="button"
