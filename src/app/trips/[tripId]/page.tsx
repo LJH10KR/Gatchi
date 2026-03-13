@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   collection,
@@ -67,8 +67,8 @@ export default function TripDetailPage() {
     null,
   );
   const [showDayCarousel, setShowDayCarousel] = useState(true);
-  const scheduleSectionRef = useRef<HTMLDivElement | null>(null);
   const [dayHasPlans, setDayHasPlans] = useState<Record<string, boolean>>({});
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   const isOwner = useMemo(
     () => !!user && !!trip && user.uid === trip.ownerUid,
@@ -479,12 +479,7 @@ export default function TripDetailPage() {
 
   useEffect(() => {
     if (!selectedDayId) return;
-    if (!scheduleSectionRef.current) return;
-
-    scheduleSectionRef.current.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    setShowScheduleModal(true);
   }, [selectedDayId]);
 
   if (!trip) {
@@ -692,186 +687,192 @@ export default function TripDetailPage() {
           )}
         </section>
 
-        {selectedDayId && (
-        <section ref={scheduleSectionRef}>
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-              일정
-            </h2>
-            {isOwner && (
-              <span className="text-[10px] text-zinc-500">
-                카드를 탭하면 수정할 수 있어요
-              </span>
-            )}
-          </div>
-
-          {plans.length === 0 ? (
-            <p className="mb-3 text-xs text-zinc-500">
-              선택한 날짜에 아직 일정이 없어요.
-            </p>
-          ) : (
-            <div className="mb-3 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth snap-x snap-mandatory">
-              {plans.map((plan) => (
+        {selectedDayId && showScheduleModal && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  일정
+                </h2>
                 <button
-                  key={plan.id}
                   type="button"
-                  onClick={() => handleSelectPlan(plan)}
-                  className={`flex h-28 min-w-[220px] snap-start flex-col justify-between rounded-2xl px-4 py-3 text-xs text-zinc-800 shadow-sm dark:text-zinc-100 ${
-                    selectedPlanId === plan.id
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                      : "bg-zinc-50 dark:bg-zinc-800"
-                  }`}
+                  onClick={() => setShowScheduleModal(false)}
+                  className="text-[11px] text-zinc-500 underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
-                  <div>
-                    <p className="text-sm font-semibold">{plan.title}</p>
-                    <p className="mt-1 text-[11px] text-zinc-500">
-                      {plan.startTime || "시간 미정"} ~{" "}
-                      {plan.endTime || "시간 미정"}
-                    </p>
-                  </div>
-                  {plan.memo && (
-                    <p className="line-clamp-2 text-[10px] text-zinc-400">
-                      {plan.memo}
-                    </p>
-                  )}
+                  닫기
                 </button>
-              ))}
-            </div>
-          )}
-
-          {isOwner && selectedDayId && (
-            <form onSubmit={handleSavePlan} className="space-y-3 text-xs">
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
-                  일정 제목
-                </label>
-                <input
-                  type="text"
-                  value={planTitle}
-                  onChange={(e) => setPlanTitle(e.target.value)}
-                  placeholder="예: 사그라다 파밀리아 투어"
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                />
               </div>
 
-              <div className="flex gap-2">
-                <div className="flex-1 space-y-1">
-                  <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
-                    시작 시간
-                  </label>
-                  <input
-                    type="time"
-                    value={planStartTime}
-                    onChange={(e) => setPlanStartTime(e.target.value)}
-                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                  />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
-                    종료 시간
-                  </label>
-                  <input
-                    type="time"
-                    value={planEndTime}
-                    onChange={(e) => setPlanEndTime(e.target.value)}
-                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
-                  메모
-                </label>
-                <textarea
-                  value={planMemo}
-                  onChange={(e) => setPlanMemo(e.target.value)}
-                  rows={3}
-                  placeholder="준비물, 이동 수단, 티켓 정보 등을 적어 두세요."
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
-                  준비물 (쉼표로 구분)
-                </label>
-                <div className="space-y-2">
-                  {planItems.map((value, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={value}
-                        onChange={(e) => {
-                          const next = [...planItems];
-                          next[index] = e.target.value;
-                          setPlanItems(next);
-                        }}
-                        placeholder="예: 여권"
-                        className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                      />
-                      {index === 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => setPlanItems((prev) => [...prev, ""])}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-bold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                        >
-                          +
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setPlanItems((prev) => {
-                              const next = prev.filter((_, i) => i !== index);
-                              return next.length > 0 ? next : [""];
-                            })
-                          }
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 text-xs font-bold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                        >
-                          -
-                        </button>
+              {plans.length === 0 ? (
+                <p className="mb-3 text-xs text-zinc-500">
+                  선택한 날짜에 아직 일정이 없어요.
+                </p>
+              ) : (
+                <div className="mb-3 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth snap-x snap-mandatory">
+                  {plans.map((plan) => (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => handleSelectPlan(plan)}
+                      className={`flex h-28 min-w-[220px] snap-start flex-col justify-between rounded-2xl px-4 py-3 text-xs text-zinc-800 shadow-sm dark:text-zinc-100 ${
+                        selectedPlanId === plan.id
+                          ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                          : "bg-zinc-50 dark:bg-zinc-800"
+                      }`}
+                    >
+                      <div>
+                        <p className="text-sm font-semibold">{plan.title}</p>
+                        <p className="mt-1 text-[11px] text-zinc-500">
+                          {plan.startTime || "시간 미정"} ~{" "}
+                          {plan.endTime || "시간 미정"}
+                        </p>
+                      </div>
+                      {plan.memo && (
+                        <p className="line-clamp-2 text-[10px] text-zinc-400">
+                          {plan.memo}
+                        </p>
                       )}
-                    </div>
+                    </button>
                   ))}
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  type="submit"
-                  disabled={saving || !planTitle}
-                  className="flex-1 rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  {saving
-                    ? "저장 중..."
-                    : selectedPlanId
-                      ? "일정 수정 저장"
-                      : "새 일정 추가"}
-                </button>
-                {selectedPlanId && (
-                  <button
-                    type="button"
-                    onClick={handleDeletePlan}
-                    disabled={saving}
-                    className="rounded-xl border border-red-200 px-3 py-2 text-[11px] font-medium text-red-500 transition hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950"
-                  >
-                    일정 삭제
-                  </button>
-                )}
-              </div>
-              {selectedPlanId && (
-                <button
-                  type="button"
-                  onClick={resetPlanForm}
-                  className="mt-1 text-[10px] text-zinc-500 underline underline-offset-2"
-                >
-                  새 일정 추가 모드로 전환
-                </button>
               )}
-            </form>
-          )}
-        </section>
+
+              {isOwner && (
+                <form onSubmit={handleSavePlan} className="space-y-3 text-xs">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                      일정 제목
+                    </label>
+                    <input
+                      type="text"
+                      value={planTitle}
+                      onChange={(e) => setPlanTitle(e.target.value)}
+                      placeholder="예: 사그라다 파밀리아 투어"
+                      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="flex-1 space-y-1">
+                      <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                        시작 시간
+                      </label>
+                      <input
+                        type="time"
+                        value={planStartTime}
+                        onChange={(e) => setPlanStartTime(e.target.value)}
+                        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                        종료 시간
+                      </label>
+                      <input
+                        type="time"
+                        value={planEndTime}
+                        onChange={(e) => setPlanEndTime(e.target.value)}
+                        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                      메모
+                    </label>
+                    <textarea
+                      value={planMemo}
+                      onChange={(e) => setPlanMemo(e.target.value)}
+                      rows={3}
+                      placeholder="준비물, 이동 수단, 티켓 정보 등을 적어 두세요."
+                      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
+                      준비물 (쉼표로 구분)
+                    </label>
+                    <div className="space-y-2">
+                      {planItems.map((value, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={value}
+                            onChange={(e) => {
+                              const next = [...planItems];
+                              next[index] = e.target.value;
+                              setPlanItems(next);
+                            }}
+                            placeholder="예: 여권"
+                            className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                          />
+                          {index === 0 ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPlanItems((prev) => [...prev, ""])
+                              }
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-bold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                            >
+                              +
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPlanItems((prev) => {
+                                  const next = prev.filter((_, i) => i !== index);
+                                  return next.length > 0 ? next : [""];
+                                })
+                              }
+                              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 text-xs font-bold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                            >
+                              -
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="submit"
+                      disabled={saving || !planTitle}
+                      className="flex-1 rounded-xl bg-zinc-900 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                    >
+                      {saving
+                        ? "저장 중..."
+                        : selectedPlanId
+                          ? "일정 수정 저장"
+                          : "새 일정 추가"}
+                    </button>
+                    {selectedPlanId && (
+                      <button
+                        type="button"
+                        onClick={handleDeletePlan}
+                        disabled={saving}
+                        className="rounded-xl border border-red-200 px-3 py-2 text-[11px] font-medium text-red-500 transition hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950"
+                      >
+                        일정 삭제
+                      </button>
+                    )}
+                  </div>
+                  {selectedPlanId && (
+                    <button
+                      type="button"
+                      onClick={resetPlanForm}
+                      className="mt-1 text-[10px] text-zinc-500 underline underline-offset-2"
+                    >
+                      새 일정 추가 모드로 전환
+                    </button>
+                  )}
+                </form>
+              )}
+            </div>
+          </div>
         )}
         {isOwner && showAddMemberModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
