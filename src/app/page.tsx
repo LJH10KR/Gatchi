@@ -142,9 +142,9 @@ export default function Home() {
           <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
             travelespana
           </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          {/* <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             스페인 여행 플래너 · 로그인하고 나만의 여행을 만들어 보세요.
-          </p>
+          </p> */}
           {user && (
             <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
               알림 설정은{" "}
@@ -323,10 +323,7 @@ export default function Home() {
                 {trips.map((trip) => {
                   const isOwner = user && trip.ownerUid === user.uid;
                   return (
-                    <div
-                      key={trip.id}
-                      className="snap-start"
-                    >
+                    <div key={trip.id} className="snap-start">
                       <Link
                         href={`/trips/${trip.id}`}
                         className="flex h-32 min-w-[220px] flex-col justify-between rounded-2xl bg-zinc-50 px-4 py-3 text-xs text-zinc-800 shadow-sm transition hover:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
