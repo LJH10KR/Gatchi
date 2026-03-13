@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  getFcmToken,
-  saveFcmToken,
-  subscribeToForegroundMessages,
-} from "@/firebase/messaging";
+import { subscribeToForegroundMessages } from "@/firebase/messaging";
 
 export function PwaClient() {
   useEffect(() => {
@@ -21,18 +17,6 @@ export function PwaClient() {
     };
 
     register();
-  }, []);
-
-  useEffect(() => {
-    const setupFcm = async () => {
-      const token = await getFcmToken();
-      if (!token) return;
-      await saveFcmToken(token);
-    };
-
-    if (typeof window !== "undefined") {
-      setupFcm();
-    }
   }, []);
 
   useEffect(() => {
