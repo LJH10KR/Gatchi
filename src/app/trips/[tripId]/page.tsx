@@ -69,6 +69,7 @@ export default function TripDetailPage() {
   const [showDayCarousel, setShowDayCarousel] = useState(true);
   const [dayHasPlans, setDayHasPlans] = useState<Record<string, boolean>>({});
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showPlanForm, setShowPlanForm] = useState(false);
 
   const isOwner = useMemo(
     () => !!user && !!trip && user.uid === trip.ownerUid,
@@ -479,6 +480,8 @@ export default function TripDetailPage() {
 
   useEffect(() => {
     if (!selectedDayId) return;
+    resetPlanForm();
+    setShowPlanForm(false);
     setShowScheduleModal(true);
   }, [selectedDayId]);
 
@@ -690,13 +693,31 @@ export default function TripDetailPage() {
         {selectedDayId && showScheduleModal && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
             <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900">
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                  일정
-                </h2>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                    일정
+                  </h2>
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetPlanForm();
+                        setShowPlanForm(true);
+                      }}
+                      className="rounded-full border border-zinc-200 px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                    >
+                      새 일정
+                    </button>
+                  )}
+                </div>
                 <button
                   type="button"
-                  onClick={() => setShowScheduleModal(false)}
+                  onClick={() => {
+                    setShowScheduleModal(false);
+                    setShowPlanForm(false);
+                    resetPlanForm();
+                  }}
                   className="text-[11px] text-zinc-500 underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-300"
                 >
                   닫기
@@ -704,16 +725,35 @@ export default function TripDetailPage() {
               </div>
 
               {plans.length === 0 ? (
-                <p className="mb-3 text-xs text-zinc-500">
-                  선택한 날짜에 아직 일정이 없어요.
-                </p>
+                isOwner ? (
+                  <div className="mb-3 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetPlanForm();
+                        setShowPlanForm(true);
+                      }}
+                      className="flex h-28 min-w-[220px] snap-start flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 text-xs text-zinc-500 hover:border-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-zinc-500 dark:hover:bg-zinc-700"
+                    >
+                      <span className="mb-1 text-lg font-bold">+</span>
+                      <span>새 일정 추가</span>
+                    </button>
+                  </div>
+                ) : (
+                  <p className="mb-3 text-xs text-zinc-500">
+                    선택한 날짜에 아직 일정이 없어요.
+                  </p>
+                )
               ) : (
                 <div className="mb-3 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth snap-x snap-mandatory">
                   {plans.map((plan) => (
                     <button
                       key={plan.id}
                       type="button"
-                      onClick={() => handleSelectPlan(plan)}
+                      onClick={() => {
+                        handleSelectPlan(plan);
+                        setShowPlanForm(true);
+                      }}
                       className={`flex h-28 min-w-[220px] snap-start flex-col justify-between rounded-2xl px-4 py-3 text-xs text-zinc-800 shadow-sm dark:text-zinc-100 ${
                         selectedPlanId === plan.id
                           ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
@@ -734,10 +774,23 @@ export default function TripDetailPage() {
                       )}
                     </button>
                   ))}
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetPlanForm();
+                        setShowPlanForm(true);
+                      }}
+                      className="flex h-28 min-w-[220px] snap-start flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 text-xs text-zinc-500 hover:border-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-zinc-500 dark:hover:bg-zinc-700"
+                    >
+                      <span className="mb-1 text-lg font-bold">+</span>
+                      <span>새 일정 추가</span>
+                    </button>
+                  )}
                 </div>
               )}
 
-              {isOwner && (
+              {isOwner && showPlanForm && (
                 <form onSubmit={handleSavePlan} className="space-y-3 text-xs">
                   <div className="space-y-1">
                     <label className="block text-[11px] font-medium text-zinc-700 dark:text-zinc-200">
@@ -859,16 +912,19 @@ export default function TripDetailPage() {
                         일정 삭제
                       </button>
                     )}
+                    {!selectedPlanId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          resetPlanForm();
+                          setShowPlanForm(false);
+                        }}
+                        className="rounded-xl border border-zinc-200 px-3 py-2 text-[11px] font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                      >
+                        취소
+                      </button>
+                    )}
                   </div>
-                  {selectedPlanId && (
-                    <button
-                      type="button"
-                      onClick={resetPlanForm}
-                      className="mt-1 text-[10px] text-zinc-500 underline underline-offset-2"
-                    >
-                      새 일정 추가 모드로 전환
-                    </button>
-                  )}
                 </form>
               )}
             </div>
