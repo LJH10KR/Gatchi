@@ -441,8 +441,8 @@ export default function TripDetailPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-black">
-      <main className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg dark:bg-zinc-900">
+    <div className="flex min-h-screen items-start justify-center bg-white px-0 py-0 font-sans dark:bg-zinc-900">
+      <main className="w-full max-w-md bg-white px-4 py-12 dark:bg-zinc-900">
         <header className="mb-4">
           <div className="mb-2 flex items-start justify-between gap-3">
             <div className="flex items-start gap-2">
