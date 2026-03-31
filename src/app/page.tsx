@@ -141,8 +141,8 @@ export default function Home() {
     .toUpperCase();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-black">
-      <main className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-lg dark:bg-zinc-900">
+    <div className="flex min-h-screen items-start justify-center bg-white px-0 py-0 font-sans dark:bg-zinc-900">
+      <main className="relative w-full max-w-md bg-white px-4 py-12 dark:bg-zinc-900">
         {user && (
           <div className="absolute right-4 top-4">
             <div className="relative">
