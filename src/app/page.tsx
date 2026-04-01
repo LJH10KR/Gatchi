@@ -140,9 +140,30 @@ export default function Home() {
     .charAt(0)
     .toUpperCase();
 
+  if (authLoading) {
+    return (
+      <div className="flex items-start justify-center bg-white px-0 py-0 font-sans dark:bg-zinc-900">
+        <main className="relative w-full max-w-md bg-white px-4 py-6 dark:bg-zinc-900">
+          <div className="mx-auto h-8 w-44 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-700" />
+          <div className="mt-8 space-y-3">
+            <div className="h-4 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-11 w-full animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-4 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-11 w-full animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+            <div className="h-10 w-full animate-pulse rounded-xl bg-zinc-300 dark:bg-zinc-600" />
+          </div>
+          <div className="mt-10 border-t border-zinc-200 pt-5 dark:border-zinc-700">
+            <div className="h-4 w-24 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+            <div className="mt-3 h-28 w-full animate-pulse rounded-2xl bg-zinc-200 dark:bg-zinc-700" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-start justify-center bg-white px-0 py-0 font-sans dark:bg-zinc-900">
-      <main className="relative w-full max-w-md bg-white px-4 py-12 dark:bg-zinc-900">
+      <main className="relative w-full max-w-md bg-white px-4 py-6 dark:bg-zinc-900">
         {user && (
           <div className="absolute right-4 top-4">
             <div className="relative">
