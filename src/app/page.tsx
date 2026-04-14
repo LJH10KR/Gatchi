@@ -26,6 +26,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [newTitle, setNewTitle] = useState("");
+  const [newCountry, setNewCountry] = useState("");
   const [newStartDate, setNewStartDate] = useState("");
   const [newEndDate, setNewEndDate] = useState("");
   const [showCreateTrip, setShowCreateTrip] = useState(false);
@@ -97,18 +98,19 @@ export default function Home() {
 
   const handleCreateTrip = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newTitle || !newStartDate || !newEndDate) return;
+    if (!user || !newTitle || !newCountry || !newStartDate || !newEndDate) return;
     setLoading(true);
     setError(null);
     try {
       await createTrip({
         ownerUid: user.uid,
         title: newTitle,
-        country: "Spain",
+        country: newCountry,
         startDate: newStartDate,
         endDate: newEndDate,
       });
       setNewTitle("");
+      setNewCountry("");
       setNewStartDate("");
       setNewEndDate("");
     } catch (err: unknown) {
@@ -142,20 +144,61 @@ export default function Home() {
 
   if (authLoading) {
     return (
-      <div className="flex items-start justify-center bg-white px-0 py-0 font-sans dark:bg-zinc-900">
+      <div className="flex min-h-screen items-start justify-center bg-white px-0 py-0 font-sans dark:bg-zinc-900">
         <main className="relative w-full max-w-md bg-white px-4 py-6 dark:bg-zinc-900">
-          <div className="mx-auto h-8 w-44 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-700" />
-          <div className="mt-8 space-y-3">
-            <div className="h-4 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-            <div className="h-11 w-full animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
-            <div className="h-4 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-            <div className="h-11 w-full animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+          {/* 로그인 후와 동일한 위치: 우측 상단 아바타 자리 */}
+          <div className="absolute right-4 top-4">
+            <div
+              className="h-9 w-9 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700"
+              aria-hidden
+            />
+          </div>
+
+          <header className="mb-6 text-center">
+            <div className="mx-auto h-8 w-40 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-700" />
+          </header>
+
+          {/* 로그인 폼 영역 스켈레톤 */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="h-4 w-14 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+              <div className="h-11 w-full animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 w-16 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+              <div className="h-11 w-full animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+            </div>
             <div className="h-10 w-full animate-pulse rounded-xl bg-zinc-300 dark:bg-zinc-600" />
+            <div className="flex justify-start">
+              <div className="h-3 w-36 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+            </div>
+            <div className="h-10 w-full animate-pulse rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800" />
           </div>
-          <div className="mt-10 border-t border-zinc-200 pt-5 dark:border-zinc-700">
-            <div className="h-4 w-24 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
-            <div className="mt-3 h-28 w-full animate-pulse rounded-2xl bg-zinc-200 dark:bg-zinc-700" />
-          </div>
+
+          <section className="mt-8 border-t border-zinc-200 pt-5 dark:border-zinc-700">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="h-4 w-24 shrink-0 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+              <div className="h-3 max-w-[min(220px,55%)] flex-1 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth snap-x snap-mandatory">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="home-skeleton-card flex h-32 min-w-[220px] snap-start flex-col justify-between rounded-2xl bg-zinc-50 px-4 py-3 shadow-sm dark:bg-zinc-800"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="h-4 flex-1 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+                      <div className="h-3 w-4 shrink-0 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+                    </div>
+                    <div className="h-3 w-36 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+                    <div className="h-3 w-12 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+                  </div>
+                  <div className="h-3 w-32 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+                </div>
+              ))}
+            </div>
+          </section>
         </main>
       </div>
     );
@@ -202,7 +245,7 @@ export default function Home() {
 
         <header className="mb-6 text-center">
           <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-            travelespana
+            Gatchi
           </h1>
           {/* <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             스페인 여행 플래너 · 로그인하고 나만의 여행을 만들어 보세요.
@@ -320,6 +363,13 @@ export default function Home() {
                 onChange={(e) => setNewTitle(e.target.value)}
                 className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
               />
+              <input
+                type="text"
+                placeholder="국가 (예: Spain)"
+                value={newCountry}
+                onChange={(e) => setNewCountry(e.target.value)}
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none ring-0 transition focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+              />
               <div className="flex gap-2">
                 <input
                   type="date"
@@ -345,9 +395,7 @@ export default function Home() {
           )}
 
           <div className="mt-2">
-            {authLoading ? (
-              <p className="text-xs text-zinc-500">여행을 불러오는 중...</p>
-            ) : trips.length === 0 ? (
+            {trips.length === 0 ? (
               <p className="text-xs text-zinc-500">
                 아직 등록된 여행이 없어요. 로그인 후 첫 여행을 추가해 보세요.
               </p>

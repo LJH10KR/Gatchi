@@ -1,6 +1,7 @@
 {
-  "name": "travelespana",
-  "short_name": "travelespana",
+  "name": "Gatchi",
+  "short_name": "Gatchi",
+  "description": "가치 있는 여행을 함께 만드는 Gatchi 플래너",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
