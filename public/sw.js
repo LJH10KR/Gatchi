@@ -1,4 +1,4 @@
-const CACHE_NAME = "travelespana-shell-v1";
+const CACHE_NAME = "Gatchi-shell-v1";
 const SHELL_URLS = ["/", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {

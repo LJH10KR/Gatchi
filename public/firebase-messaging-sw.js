@@ -15,7 +15,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification?.title ?? "travelespana 알림";
+  const notificationTitle = payload.notification?.title ?? "Gatchi 알림";
   const notificationOptions = {
     body: payload.notification?.body,
     icon: "/travelespana-manifest-192.png",

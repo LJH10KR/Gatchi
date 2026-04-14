@@ -7,7 +7,7 @@
   },
   "hosting": [
     {
-      "site": "travelespana",
+      "site": "Gatchi",
       "source": ".",
       "frameworksBackend": {}
     }

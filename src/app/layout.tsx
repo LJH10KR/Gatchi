@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "travelespana",
+  title: "Gatchi",
   description: "여행을 위한 스페인 일정 플래너",
   manifest: "/manifest.webmanifest",
 };

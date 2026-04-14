@@ -23,7 +23,7 @@ export function PwaClient() {
     if (typeof window === "undefined") return;
 
     subscribeToForegroundMessages((payload) => {
-      const title = payload?.notification?.title ?? "travelespana 알림";
+      const title = payload?.notification?.title ?? "Gatchi 알림";
       const body = payload?.notification?.body ?? "";
 
       // 심플한 브라우저 내 토스트
