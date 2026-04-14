@@ -3126,6 +3126,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"gatchi@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "gatchi@workspace:."
+  dependencies:
+    "@tailwindcss/postcss": "npm:^4"
+    "@types/node": "npm:^20"
+    "@types/react": "npm:^19"
+    "@types/react-dom": "npm:^19"
+    axios: "npm:^1.13.6"
+    babel-plugin-react-compiler: "npm:1.0.0"
+    eslint: "npm:^9"
+    eslint-config-next: "npm:16.1.6"
+    firebase: "npm:^12.10.0"
+    next: "npm:15.5.12"
+    react: "npm:19.2.3"
+    react-dom: "npm:19.2.3"
+    tailwindcss: "npm:^4"
+    typescript: "npm:^5"
+  languageName: unknown
+  linkType: soft
+
 "generator-function@npm:^2.0.0":
   version: 2.0.1
   resolution: "generator-function@npm:2.0.1"
@@ -5005,27 +5026,6 @@ __metadata:
   checksum: 10c0/487988b0a19c654ff3e1961b87f471702e708fa8a8dd02a298ef16da7206692e8552a0250e8b3e8759270f62e9d8314616f6da274734d3b558b1fc7b7724e892
   languageName: node
   linkType: hard
-
-"travelespana@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "travelespana@workspace:."
-  dependencies:
-    "@tailwindcss/postcss": "npm:^4"
-    "@types/node": "npm:^20"
-    "@types/react": "npm:^19"
-    "@types/react-dom": "npm:^19"
-    axios: "npm:^1.13.6"
-    babel-plugin-react-compiler: "npm:1.0.0"
-    eslint: "npm:^9"
-    eslint-config-next: "npm:16.1.6"
-    firebase: "npm:^12.10.0"
-    next: "npm:15.5.12"
-    react: "npm:19.2.3"
-    react-dom: "npm:19.2.3"
-    tailwindcss: "npm:^4"
-    typescript: "npm:^5"
-  languageName: unknown
-  linkType: soft
 
 "ts-api-utils@npm:^2.4.0":
   version: 2.4.0
